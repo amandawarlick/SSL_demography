@@ -8,17 +8,45 @@ knitr::opts_chunk$set(
   comment = "#>"
 )
 ```
-# Steller sea lion demography & environmental variability
+## [Steller sea lion demography & environmental variability](link)
 
-This repository contains materials for the manuscript X. 
+#### Journal name
 
-Data can be found in this Dryad repository.  [here](link)
+#### Amanda J. Warlick, Devin Johnson, Sarah J. Converse
+
+##### Code DOI: [![DOI](link here)
+
+##### Please contact the first author for questions about the code or data: Amanda J. Warlick (awarlick@uw.edu)
+_______________________________________________________________________________________________________
+
+## Abstract:
+1. 
+2. 
+3. 
+4. 
+
+### Repository Directory
+
+#### [Published PDF](link)
+
+### [scripts](./scripts)
+
+Contains code for running models and analyzing results. 
+
+### Data
+
+Contains raw and processed data: [data](./data) 
+
+### Results
+
+Contains figures and results: [results](./results)
 
 
+<!-- This repository contains materials for the manuscript X.  -->
 
-If you're not familiar with using GitHub yet, first make a GitHub account. From there, the best way to download the repository, make changes, and then "push" the changes back to the repository is to use the "clone" option. 
+<!-- Data can be found in this Dryad repository.  [here](link) -->
 
-![](imgs/clone.png)
+<!-- If you're not familiar with using GitHub yet, first make a GitHub account. From there, the best way to download the repository, make changes, and then "push" the changes back to the repository is to use the "clone" option.  -->
 
-
+<!-- ![](figs/clone.png) -->
 
