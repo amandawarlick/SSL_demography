@@ -1,1 +1,1 @@
-Put scripts in here
+Scripts for generating the manuscript, manuscript figures, and generating capture histories.

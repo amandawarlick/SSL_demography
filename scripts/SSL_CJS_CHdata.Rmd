@@ -1,0 +1,277 @@
+
+## This file creates the data for the mark-resight multi-event model with both sexes, run in SSL_CJS.Rmd. 
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r set up}
+
+library(here)
+library(dplyr)
+library(lubridate)
+library(reshape2)
+library(Hmisc) # %nin%
+
+```
+
+
+```{r create CH}
+
+#initial branding data (site, weight, sex, etc) for w.DPS
+inits_raw <- read.csv(here::here('SSL_CJS', "Data", "initial_capture_data_02012021.csv"), 
+                  header = T, stringsAsFactors = F)
+
+inits <- inits_raw %>%
+  transform(Sex = ifelse(!is.na(AdjustedSex), AdjustedSex, Sex)) %>%
+  dplyr::select(AnimalID, Year, Region, SiteName, Sex, Age, 
+                Mass_kg, StandardLength_cm) %>%
+  dplyr::rename(t_0 = Year, site_0 = SiteName, reg_0 = Region) %>%
+  filter(t_0 > 1999 & t_0 < 2018) %>% #change to 2019 with new data
+  dplyr::rename(branding_age = Age) %>%
+  transform(Mass_kg = ifelse(is.na(Mass_kg), NA, Mass_kg)) %>% #fill in any NAs (0)
+  transform(StandardLength_cm = ifelse(is.na(StandardLength_cm), NA, StandardLength_cm)) %>% #fill in any NAs (28)
+  filter(site_0 != 'CHISWELL ISLANDS') #we don't get these resights; SE AK
+  
+inits_f <- inits %>% filter(Sex == 'F') 
+inits_m <- inits %>% filter(Sex == 'M') 
+
+#FEMALES
+#This contains multiple entries per animal per day. Sometimes pup_ev or Behavior is different, not always. 
+res_raw <- read.csv(here::here('SSL_CJS', 'Data', 'resight_data_02012021.csv'), 
+                     header = T, stringsAsFactors = F) 
+
+resights <- res_raw %>%
+  dplyr::select(-c(Sex, Beach, Platform, Time, datetime, Age)) %>% #sex from branding is more complete, but contains a few mistakes
+  merge(inits_f, by = c('AnimalID'), all.y = T) %>% #take only females
+  transform(year = year(date)) %>%
+  transform(years_old = year - t_0) %>%
+  filter(year < 2019) %>%
+  transform(SiteName = trimws(SiteName, which = c("both", "left", "right"))) %>%
+  transform(age_cat = ifelse(years_old == 0, 'P',
+                             ifelse(years_old == 1, '1',
+                                    ifelse(years_old == 2, '2',
+                                           ifelse(years_old == 3, '3',
+                                                  ifelse(years_old == 4, '4',
+                                                         ifelse(years_old == 5, '5',
+                                                                ifelse(years_old > 5, '6+', '100')))))))) 
+
+
+
+#Number of unique pup_ev per year per animalID; 
+#most unambiguous (only 1222 of 8445 more than 1 evidence category)
+#pup evidence is a value 1-3, an average of expert's votes for whether there was ev of pup
+#table(resights$pup_evidence) 
+
+#find maximum 'pup evidence' value per year per animal 
+max_pup <- resights %>%
+  group_by(AnimalID, year) %>%
+  dplyr::summarize(pup_status_yr = max(pup_evidence), .groups = 'keep') %>%
+  transform(pup_cat = ifelse(pup_status_yr == 3, 1, 0)) #assign reprod status (1 or 0) using only 3s (pup for sure)
+
+#and then remerge max_pup onto resights, standardize weight, length, create bmi
+resights <- resights %>% 
+  merge(max_pup, by = c('AnimalID', 'year')) %>%
+  transform(pup_evidence = round(pup_evidence, 1)) %>%
+  #remove extra observations of an animal per day with otherwise same pup evidence
+  distinct(AnimalID, year, Region, date, reg_0, site_0, t_0, Sex, Mass_kg, StandardLength_cm,
+           years_old, age_cat, pup_status_yr, pup_cat) %>%
+  #fixing a few P, 1, and 2s with pups -- errors
+  transform(pup_cat = ifelse(years_old < 4 & pup_cat == 1, 0, pup_cat)) %>% 
+  transform(pup_cat = ifelse(age_cat == 'P', 0, pup_cat)) %>%
+  transform(pup_fact = ifelse(pup_cat == 1, 'P', 'U')) %>% #pup factor category (P or Unk)
+  transform(obs = paste0(age_cat, pup_fact)) %>%  #create categories of with pup and unk per age
+  transform(bmi = Mass_kg/((StandardLength_cm/100)*(StandardLength_cm/100))) %>%
+  transform(bmi_std = scale(bmi)) %>%
+  transform(bmi_std = ifelse(is.na(bmi_std), 0, bmi_std)) %>%
+  transform(Mass_kg = ifelse(is.na(Mass_kg), 0, Mass_kg)) %>%
+  transform(Mass_std = scale(Mass_kg)) 
+
+#annual level CH observations
+ch_fem <- resights %>% 
+  arrange(t_0, AnimalID) %>% #make sure aligns with resight frequency dataframe below
+  #remove duplicate annual observations
+  distinct(AnimalID, year, Region, reg_0, t_0, Sex,
+           years_old, age_cat, pup_status_yr, pup_cat, obs, Mass_std) %>%
+  dplyr::select(AnimalID, year, Sex, reg_0, t_0, obs, Mass_std) %>%
+  #duplicates largely bc sighted in dif regions -- I think could streamline with this instead 
+  #of the above distinct():
+  # distinct(AnimalID, year, Sex, reg_0, t_0, obs, Mass_std) %>%
+  distinct() %>% 
+  transform(ch = as.numeric(factor(obs, levels = c('PU', '1U', '2U', '3U',
+                                                   '4U', '4P', '5U', '5P', '6+U', '6+P', 'ND')))) %>%
+  dplyr::select(-obs) %>%
+  transform(reg_0b = ifelse(reg_0 == 'W ALEU', 'W ALEU', 'Other')) %>%
+  transform(reg_0c = ifelse(reg_0 == 'W ALEU' | reg_0 == 'C ALEU', 'West', 'East')) %>%
+  dcast(AnimalID + reg_0 + reg_0b + reg_0c + t_0 + Mass_std + Sex ~ year, value.var = 'ch', fill = 11) %>%
+  arrange(AnimalID)
+
+#number of resights per animal per year using unique observation dates
+#excludes entries on same day because observers might treat this differently
+num_resight <- resights %>%
+  dplyr::group_by(AnimalID, year) %>%
+  dplyr::summarize(resights = n_distinct(date), .groups = 'keep') %>% 
+  # distinct() %>%
+  dcast(AnimalID ~ year, value.var = 'resights', fill = 0) %>%
+  melt(id.vars = 'AnimalID') %>%
+  #scale can be adjusted; 9+ resights == 3, 3-8 resights == 2, 1-2 resights == 1, <1 == ND (4)
+  transform(resights = ifelse(value < 1, 4, 
+                              ifelse(value > 8, 3,
+                                     ifelse(value < 9 & value > 2, 2,
+                                            ifelse(value <3, 1, 100))))) %>%
+  dcast(AnimalID ~ variable, value.var = 'resights') %>%
+  arrange(AnimalID)
+
+#actual number of resights rather than categorical
+num_resight_act <- resights %>%
+  dplyr::group_by(AnimalID, year) %>%
+  dplyr::summarize(resights = n_distinct(date), .groups = 'keep') %>% 
+  dcast(AnimalID ~ year, value.var = 'resights', fill = 0) %>%
+  melt(id.vars = 'AnimalID') %>%
+  dcast(AnimalID ~ variable, value.var = 'value') %>%
+  arrange(AnimalID)
+
+write.csv(num_resight_act, here::here('SSL_CJS', 'Data', 'resights_actual.csv'), row.names = F)
+
+######## males
+
+#exploring territorial behavior data -- not using since not estimating reproduction for males
+#min age = 6, max age = 16; rel same across regions
+# min_age_ter <- res_raw %>%
+#   # transform(date = mdy(date)) %>%
+#   # transform(year = year(date)) %>% #60K
+#   merge(inits_m, by = c('AnimalID'), all.y = T) %>% 
+#   merge(super_ref %>%
+#           dplyr::select(Complex, SiteName, Region, Rookery) %>%
+#           dplyr::rename(Region_ref = Region), by = 'SiteName', all.x = T) %>%
+#   transform(years_old = year - t_0) %>%
+#   dplyr::select(AnimalID, reg_0, Behavior, year, t_0, years_old) %>%
+#   filter(Behavior %in% c('TM', 'TN', 'TF')) %>%
+#   group_by(reg_0) %>%
+#   summarize(min_ter = min(years_old), max_ter = max(years_old))
+
+##of all the males 6+ years old, how many were observed as territorial?
+# ter_permanence <- res_raw %>% dplyr::select(-Sex) %>%
+#   merge(inits_m, by = c('AnimalID'), all.y = T) %>%
+#   transform(year = year(date)) %>%
+#   transform(years_old = year - t_0) %>%
+#   # dplyr::select(AnimalID, reg_0, Behavior, year, years_old) %>%
+#   transform(territory = ifelse(Behavior %in% c('TM', 'TF', 'TN'), 1, 0)) %>%
+#   # filter(years_old > 5)  %>% 
+#   distinct(AnimalID, year, territory, Behavior) 
+
+#years where animals were territorial - applying max
+max_ter_yr <- res_raw %>% dplyr::select(-Sex) %>%
+  merge(inits_m, by = c('AnimalID'), all.y = T) %>%
+  transform(year = year(date)) %>%
+  transform(territory = ifelse(Behavior %in% c('TM', 'TF', 'TN'), 1, 0)) %>%
+  # distinct(AnimalID, year, territory, Behavior) %>%
+  group_by(AnimalID, year) %>%
+  dplyr::summarize(male_stat = max(territory), .groups = 'keep')
+
+resights_m <- res_raw %>%
+  dplyr::select(-c(Sex, Beach, Platform, Time, datetime, Age)) %>% #sex from branding is more complete
+  merge(inits_m, by = c('AnimalID'), all.y = T) %>% #take only males
+  transform(year = year(date)) %>%
+  transform(years_old = year - t_0) %>%
+  filter(year < 2019) %>%
+  transform(SiteName = trimws(SiteName, which = c("both", "left", "right")))  %>%
+  merge(max_ter_yr, by = c('AnimalID', 'year'), all.x = T) %>%
+  transform(age_cat = ifelse(years_old == 0, 'P',
+                      ifelse(years_old == 1, '1',
+                      ifelse(years_old == 2, '2',
+                      ifelse(years_old == 3, '3',
+                      ifelse(years_old == 4, '4',
+                      ifelse(years_old == 5, '5', 'B'))))))) %>%
+  transform(age_cat = factor(paste0(age_cat, 'M'))) %>%
+  transform(bmi = Mass_kg/((StandardLength_cm/100)*(StandardLength_cm/100))) %>%
+  transform(bmi_std = scale(bmi)) %>%
+  transform(bmi_std = ifelse(is.na(bmi_std), 0, bmi_std)) %>%
+  transform(Mass_kg = ifelse(is.na(Mass_kg), 0, Mass_kg)) %>%
+  transform(Mass_std = scale(Mass_kg)) 
+ 
+#annual CH
+ch_m <- resights_m %>%
+  arrange(t_0, AnimalID) %>%
+  transform(pup_status_yr = 0, pup_cat = 0, pup_fact = factor(as.character('M'))) %>% 
+  transform(obs = age_cat) %>%  
+  distinct(AnimalID, year, Region, reg_0, t_0, Sex,
+           years_old, age_cat, pup_status_yr, pup_cat, obs, Mass_std) %>%
+  dplyr::select(AnimalID, year, Sex, reg_0, t_0, obs, Mass_std) %>%
+  distinct() %>% #check why there are duplicates
+  transform(ch = as.numeric(factor(obs, levels = c('PM', '1M', '2M', '3M', '4M', '5M', 'BM')))) %>%
+  dplyr::select(-obs) %>%
+  transform(reg_0b = ifelse(reg_0 == 'W ALEU', 'W ALEU', 'Other')) %>%
+  transform(reg_0c = ifelse(reg_0 == 'W ALEU' | reg_0 == 'C ALEU', 'West', 'East')) %>%
+  dcast(AnimalID + reg_0 + reg_0b + reg_0c + t_0 + Mass_std + Sex ~ year, value.var = 'ch', fill = 8) %>%
+  arrange(AnimalID)
+
+```
+
+```{r write csvs}
+
+
+## ALL INDIVIDUALS
+
+# write.csv(ch_fem,
+#           file = paste(here::here('SSL_CJS', 'Data', 'ProcData'), '/ch_fem.csv', sep = ''),
+#           row.names = F)
+# write.csv(num_resight,
+#           file = paste(here::here('SSL_CJS', 'Data', 'ProcData'), '/num_resight.csv', sep = ''),
+#           row.names = F)
+# write.csv(ch_m,
+#           file = paste(here::here('SSL_CJS', 'Data', 'ProcData'), '/ch_m.csv', sep = ''),
+#           row.names = F)
+# 
+# ## Eastern
+# ids <- inits_f %>% filter(reg_0 %nin% c('W ALEU', 'C ALEU')) %>% dplyr::select(AnimalID)
+# ids_m <- inits_m %>% filter(reg_0 %nin% c('W ALEU', 'C ALEU')) %>% dplyr::select(AnimalID)
+#   
+# write.csv(ch_fem %>% filter(AnimalID %in% ids$AnimalID),
+#           file = paste(here::here('SSL_CJS', 'Data', 'ProcData'), '/ch_fem_EAST.csv', sep = ''),
+#           row.names = F)
+# write.csv(num_resight %>% filter(AnimalID %in% ids$AnimalID),
+#           file = paste(here::here('SSL_CJS', 'Data', 'ProcData'), '/num_resight_EAST.csv', sep = ''),
+#           row.names = F)
+# write.csv(ch_m %>% filter(AnimalID %in% ids_m$AnimalID),
+#           file = paste(here::here('SSL_CJS', 'Data', 'ProcData'), '/ch_m_EAST.csv', sep = ''),
+#           row.names = F)
+# 
+# ## Western (WALEU + CALEU)
+# ids <- inits_f %>% filter(reg_0 %in% c('W ALEU', 'C ALEU')) %>% dplyr::select(AnimalID)
+# ids_m <- inits_m %>% filter(reg_0 %in% c('W ALEU', 'C ALEU')) %>% dplyr::select(AnimalID)
+#   
+# write.csv(ch_fem %>% 
+#             filter(AnimalID %in% ids$AnimalID) %>%
+#             dplyr::select(-c(`2000`:`2010`)),
+#           file = paste(here::here('SSL_CJS', 'Data', 'ProcData'), '/ch_fem_WEST.csv', sep = ''),
+#           row.names = F)
+# write.csv(num_resight %>% filter(AnimalID %in% ids$AnimalID) %>%
+#             dplyr::select(-c(`2000`:`2010`)),
+#           file = paste(here::here('SSL_CJS', 'Data', 'ProcData'), '/num_resight_WEST.csv', sep = ''),
+#           row.names = F)
+# write.csv(ch_m %>% filter(AnimalID %in% ids_m$AnimalID) %>%
+#             dplyr::select(-c(`2000`:`2010`)),
+#           file = paste(here::here('SSL_CJS', 'Data', 'ProcData'), '/ch_m_WEST.csv', sep = ''),
+#           row.names = F)
+
+```
+
+```{r manuscript inline bits}
+
+
+#need table of n_ids by year and region
+
+brands <- inits %>%
+  dplyr::select(AnimalID, t_0, reg_0) %>% distinct() %>%
+  reshape2::dcast(reg_0 ~ t_0, value.var = 'AnimalID') %>%
+  transform(reg_0 = factor(reg_0, levels = c('E GULF', 'C GULF', 'E ALEU', 'C ALEU', 'W ALEU'))) %>%
+  arrange(reg_0)
+
+write.csv(brands_yr_reg, file = here::here('SSL_CJS', 'Data', 'ProcData', 'brands.csv'),
+          row.names = F)
+
+
+```
+
+
