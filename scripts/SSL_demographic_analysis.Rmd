@@ -59,8 +59,8 @@ plot_theme <- function(...) {
 }
 rainbow2 <- c("violetred4", "dodgerblue3", 'deepskyblue1', "#4aaaa5", "#a3d39c", "#f6b61c", "chocolate2", "red3")
 
-source(here::here('SSL_CJS', 'Map_script.R'))
-source(here::here('SSL_CJS', 'SSL_demographic_analysis_figs.R'))
+source(here::here('scripts', 'Map_script.R'))
+source(here::here('scripts', 'SSL_demographic_analysis_figs.R'))
 
 ```
 

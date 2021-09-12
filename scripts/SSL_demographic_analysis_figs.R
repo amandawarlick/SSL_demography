@@ -40,13 +40,13 @@ rainbow2 <- c("violetred4", "dodgerblue3", 'deepskyblue1', "#4aaaa5", "#a3d39c",
 ##########################################
 
 #### load in brands table created along with capture histories in data processing script ####
-brands_table <- read.csv(here::here('SSL_CJS', 'Data', 'ProcData', 'brands.csv')) 
+brands_table <- read.csv(here::here('data', 'ProcData', 'brands.csv')) 
 colnames(brands_table) <- gsub('X', '', colnames(brands_table))
 
 #### posteriors and posterior summaries: null model ####
 
 #west
-west_out <- readRDS(here::here('SSL_CJS', 'Output', 'Current', 'Final', paste0('out_null_west.rds')))
+west_out <- readRDS(here::here('results', paste0('out_null_west.rds')))
 all_pars <- colnames(west_out$samples$chain1)
 noZ <- all_pars[which(!grepl('z', all_pars))]
 
@@ -60,7 +60,7 @@ post_sum_w <- data.frame(
 post_sum_w$variable <- row.names(post_sum_w)
 
 #east -- do once and read back in for better markdown knitting speed
-# east_out <- readRDS(here::here('SSL_CJS', 'Output', 'Current', 'Final', paste0('out_null_east.rds')))
+# east_out <- readRDS(here::here('results', paste0('out_null_east.rds')))
 # 
 # all_pars <- colnames(east_out$samples$chain1)
 # noZ <- all_pars[which(!grepl('z', all_pars))]
@@ -68,10 +68,10 @@ post_sum_w$variable <- row.names(post_sum_w)
 # outmat_east <- as.matrix(east_out$samples)
 # posts_east <- outmat_east[,noZ]
 # 
-# write.csv(posts_east, file = here::here('SSL_CJS', 'Output', 'Current', 'Final', 'posts_east.csv'),
+# write.csv(posts_east, file = here::here('results', 'posts_east.csv'),
 #           row.names = F)
 
-posts_east <- read.csv(file = here::here('SSL_CJS', 'Output', 'Current', 'Final', 'posts_east.csv'),
+posts_east <- read.csv(file = here::here('results', 'posts_east.csv'),
                        header = T, stringsAsFactors = F)
 
 post_sum_e <- data.frame(
@@ -230,21 +230,19 @@ nat_plot <- ggplot(nat.vals %>% filter(age != 'all'),
   scale_color_manual(values = c('black', 'grey65')) +
   scale_x_continuous(breaks = c(seq(5, 19, by = 2)), labels = c(seq(2004, 2018, by = 2)))
 
-#### time-varying predictions: use full model, chose winter season #####
-east_out <- readRDS(here::here('SSL_CJS', 'Output', 'Current', 'Final', 
-                               paste0('out_full_east_NB.rds')))
-
-all_pars <- colnames(east_out$samples$chain1)
-noZ <- all_pars[which(!grepl('z', all_pars))]
-
-outmat_east <- as.matrix(east_out$samples)
-posts_east_t <- outmat_east[,noZ]
+#### time-varying predictions: use full model, chose entire non-breeding season #####
+# east_out <- readRDS(here::here('results', paste0('out_full_east_NB.rds')))
 # 
-write.csv(posts_east_t, file = here::here('SSL_CJS', 'Output', 'Current', 'Final', 'posts_east_t.csv'),
-          row.names = F)
+# all_pars <- colnames(east_out$samples$chain1)
+# noZ <- all_pars[which(!grepl('z', all_pars))]
+# 
+# outmat_east <- as.matrix(east_out$samples)
+# posts_east_t <- outmat_east[,noZ]
+# # 
+# write.csv(posts_east_t, file = here::here('results', 'posts_east_t.csv'),
+#           row.names = F)
 
-posts_east_t <- read.csv(file = here::here('SSL_CJS', 'Output', 'Current', 'Final', 'posts_east_t.csv'),
-                       header = T, stringsAsFactors = F)
+posts_east_t <- read.csv(file = here::here('results', 'posts_east_t.csv'), header = T, stringsAsFactors = F)
 
 post_sum_t <- data.frame(
   med = apply(posts_east_t, 2, function(x) quantile(x, probs = 0.50, na.rm = T, names = F)),
@@ -366,16 +364,14 @@ time_vary_plot <- plot_grid(phi_t_plot, plot_grid(psi_t_plot, p_t_plot, labels =
 #     age <- c('P', '1', '.psi', '.psiB')
 #     env_vars <- c('chla', 'albsa', 'up', 'AOI', 'vwnd', 'npgo')
 #     bmi_vars <- c("b.mass1", "b.mass1M", "b.massP","b.massPM",  "b.mass.psi", "b.mass.psiB")
-#     RE_waic <- readRDS(file = here::here('SSL_CJS', 'Output', 'Current', 
-#                                          'Final', paste0('out_RE_WAIC.rds')))$WAIC}
+#     RE_waic <- readRDS(file = here::here('results', paste0('out_RE_WAIC.rds')))$WAIC}
 #   else {
 #   age <- c('P', '1')
 #   env_vars <- c('up', 'AOI', 'vwnd', 'npgo')
 #   bmi_vars <- c("b.mass1", "b.mass1M", "b.massP","b.massPM",  "b.mass.psi")
 #   RE_waic <- NA}
 #   
-#   null_waic <- readRDS(here::here('SSL_CJS', 'Output', 'Current', 'Final', 
-#                                paste0('out_null_', r, '.rds')))$WAIC
+#   null_waic <- readRDS(here::here('results', paste0('out_null_', r, '.rds')))$WAIC
 # 
 # cov_vars <- numeric()
 # for (e in env_vars) {
@@ -391,8 +387,7 @@ time_vary_plot <- plot_grid(phi_t_plot, plot_grid(psi_t_plot, p_t_plot, labels =
 #   #just choose one season run from which to grab bmi effects
 #   if (s == 'win') {cov_vars <- c(cov_vars, bmi_vars)} else {cov_vars <- cov_vars}
 #   
-# out <- readRDS(here::here('SSL_CJS', 'Output', 'Current', 'Final', 
-#                                paste0('out_full_', r, '_', s, '.rds')))
+# out <- readRDS(here::here('results', paste0('out_full_', r, '_', s, '.rds')))
 # all_pars <- colnames(out$samples$chain1)
 # noZ <- all_pars[which(!grepl('z', all_pars))]
 # 
@@ -451,8 +446,7 @@ time_vary_plot <- plot_grid(phi_t_plot, plot_grid(psi_t_plot, p_t_plot, labels =
 
 #### covariate plots ####
 #load back in
-cov_dat <- read.csv(file = here::here('SSL_CJS', 'Output', 'Current', 'Final',
-                                      'post_sum_all.csv'), header = T, stringsAsFactors = F)
+cov_dat <- read.csv(file = here::here('results','post_sum_all.csv'), header = T, stringsAsFactors = F)
 
 #effect of pup mass
 bmi_dat <- cov_dat %>% filter(grepl('mass', variable)) %>%
@@ -524,14 +518,12 @@ env_west_plot <- ggplot(env_dat_w, aes(age, med), col = Season, group = Season) 
   scale_color_manual(values = rainbow2[-c(1,4)])
 
 #probability of greater/less than zero beta values
-prob_vals_env <- read.csv(file = here::here('SSL_CJS', 'Output', 'Current', 'Final',
-                                            'beta_probs_all.csv'), header = T, stringsAsFactors = F) %>%
+prob_vals_env <- read.csv(file = here::here('results','beta_probs_all.csv'), header = T, stringsAsFactors = F) %>%
   transform(prob = abs(round(prob,2)))
 
 
 #### waic values ####
-waic_vals <- read.csv(file = here::here('SSL_CJS', 'Output', 'Current', 'Final', 'waic_all.csv'), 
-                      header = T, stringsAsFactors = F)
+waic_vals <- read.csv(file = here::here('results', 'waic_all.csv'), header = T, stringsAsFactors = F)
 
 waic_tab <- waic_vals %>% filter(Region == 'east') %>%
   reshape2::melt(id.vars = c('Region', 'Season'), value.name = 'WAIC', variable.name = 'Model') %>%
@@ -563,17 +555,14 @@ waic_tab <- waic_vals %>% filter(Region == 'east') %>%
 # 
 # waic_vals_east <- data.frame()
 # for (r in c('east')) {
-#   null <- readRDS(file = here::here('SSL_CJS', 'Output', 'Current', 'Final',
-#                                     paste0('out_null_east.rds')))$WAIC
+#   null <- readRDS(file = here::here('results',paste0('out_null_east.rds')))$WAIC
 #   RE <- readRDS(file = here::here('SSL_CJS', 'Output', 'Current', 'Final',
 #                                   paste0('out_RE_WAIC.rds')))$WAIC
 #                                   
 #   for (v in vars) {
 #     for (s in season) {
 # 
-#       env <- readRDS(file = here::here('SSL_CJS', 'Output', 'Current', 'Final', 'SI',
-#                                        'Single variables',
-#                                        paste0('out_full_east_', s, '_',  v, '.rds')))$WAIC
+#       env <- readRDS(file = here::here('results', 'SI', paste0('out_full_east_', s, '_',  v, '.rds')))$WAIC
 # 
 #       vals <- data.frame(Region = r, Season = s, Var = v, WAIC = env, RE = RE, null = null)
 # 
@@ -584,16 +573,13 @@ waic_tab <- waic_vals %>% filter(Region == 'east') %>%
 # 
 # waic_vals_west <- data.frame()
 # for (r in c('west')) {
-#   null <- readRDS(file = here::here('SSL_CJS', 'Output', 'Current', 'Final',
-#                                     paste0('out_null_west.rds')))$WAIC
+#   null <- readRDS(file = here::here('results', paste0('out_null_west.rds')))$WAIC
 #   RE <- NA
 #   
 #   for (v in vars) {
 #     for (s in season) {
 #       
-#       env <- readRDS(file = here::here('SSL_CJS', 'Output', 'Current', 'Final', 'SI',
-#                                        'Single variables',
-#                                        paste0('out_env_west_', s, '_',  v, '.rds')))$WAIC
+#       env <- readRDS(file = here::here('results', 'SI', paste0('out_env_west_', s, '_',  v, '.rds')))$WAIC
 #       
 #       vals <- data.frame(Region = r, Season = s, Var = v, WAIC = env, RE = RE, null = null)
 #       
@@ -604,7 +590,7 @@ waic_tab <- waic_vals %>% filter(Region == 'east') %>%
 # 
 # waic_vals <- bind_rows(waic_vals_east, waic_vals_west) 
 # 
-# write.csv(waic_vals, here::here('SSL_CJS', 'Output', 'Current', 'Final', 'SI',
+# write.csv(waic_vals, here::here('results', 'SI',
 #                                 'waic_vals_singles.csv'), row.names = F)
 
 

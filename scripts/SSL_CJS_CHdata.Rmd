@@ -19,7 +19,7 @@ library(Hmisc) # %nin%
 ```{r create CH}
 
 #initial branding data (site, weight, sex, etc) for w.DPS
-inits_raw <- read.csv(here::here('SSL_CJS', "Data", "initial_capture_data_02012021.csv"), 
+inits_raw <- read.csv(here::here('data', "initial_capture_data_02012021.csv"), 
                   header = T, stringsAsFactors = F)
 
 inits <- inits_raw %>%
@@ -38,7 +38,7 @@ inits_m <- inits %>% filter(Sex == 'M')
 
 #FEMALES
 #This contains multiple entries per animal per day. Sometimes pup_ev or Behavior is different, not always. 
-res_raw <- read.csv(here::here('SSL_CJS', 'Data', 'resight_data_02012021.csv'), 
+res_raw <- read.csv(here::here('data', 'resight_data_02012021.csv'), 
                      header = T, stringsAsFactors = F) 
 
 resights <- res_raw %>%
@@ -131,7 +131,7 @@ num_resight_act <- resights %>%
   dcast(AnimalID ~ variable, value.var = 'value') %>%
   arrange(AnimalID)
 
-write.csv(num_resight_act, here::here('SSL_CJS', 'Data', 'resights_actual.csv'), row.names = F)
+# write.csv(num_resight_act, here::here('data', 'resights_actual.csv'), row.names = F)
 
 ######## males
 
@@ -214,13 +214,13 @@ ch_m <- resights_m %>%
 ## ALL INDIVIDUALS
 
 # write.csv(ch_fem,
-#           file = paste(here::here('SSL_CJS', 'Data', 'ProcData'), '/ch_fem.csv', sep = ''),
+#           file = paste(here::here('data', 'ProcData'), '/ch_fem.csv', sep = ''),
 #           row.names = F)
 # write.csv(num_resight,
-#           file = paste(here::here('SSL_CJS', 'Data', 'ProcData'), '/num_resight.csv', sep = ''),
+#           file = paste(here::here('data', 'ProcData'), '/num_resight.csv', sep = ''),
 #           row.names = F)
 # write.csv(ch_m,
-#           file = paste(here::here('SSL_CJS', 'Data', 'ProcData'), '/ch_m.csv', sep = ''),
+#           file = paste(here::here('data', 'ProcData'), '/ch_m.csv', sep = ''),
 #           row.names = F)
 # 
 # ## Eastern
@@ -228,13 +228,13 @@ ch_m <- resights_m %>%
 # ids_m <- inits_m %>% filter(reg_0 %nin% c('W ALEU', 'C ALEU')) %>% dplyr::select(AnimalID)
 #   
 # write.csv(ch_fem %>% filter(AnimalID %in% ids$AnimalID),
-#           file = paste(here::here('SSL_CJS', 'Data', 'ProcData'), '/ch_fem_EAST.csv', sep = ''),
+#           file = paste(here::here('data', 'ProcData'), '/ch_fem_EAST.csv', sep = ''),
 #           row.names = F)
 # write.csv(num_resight %>% filter(AnimalID %in% ids$AnimalID),
-#           file = paste(here::here('SSL_CJS', 'Data', 'ProcData'), '/num_resight_EAST.csv', sep = ''),
+#           file = paste(here::here('data', 'ProcData'), '/num_resight_EAST.csv', sep = ''),
 #           row.names = F)
 # write.csv(ch_m %>% filter(AnimalID %in% ids_m$AnimalID),
-#           file = paste(here::here('SSL_CJS', 'Data', 'ProcData'), '/ch_m_EAST.csv', sep = ''),
+#           file = paste(here::here('data', 'ProcData'), '/ch_m_EAST.csv', sep = ''),
 #           row.names = F)
 # 
 # ## Western (WALEU + CALEU)
@@ -244,15 +244,15 @@ ch_m <- resights_m %>%
 # write.csv(ch_fem %>% 
 #             filter(AnimalID %in% ids$AnimalID) %>%
 #             dplyr::select(-c(`2000`:`2010`)),
-#           file = paste(here::here('SSL_CJS', 'Data', 'ProcData'), '/ch_fem_WEST.csv', sep = ''),
+#           file = paste(here::here('data', 'ProcData'), '/ch_fem_WEST.csv', sep = ''),
 #           row.names = F)
 # write.csv(num_resight %>% filter(AnimalID %in% ids$AnimalID) %>%
 #             dplyr::select(-c(`2000`:`2010`)),
-#           file = paste(here::here('SSL_CJS', 'Data', 'ProcData'), '/num_resight_WEST.csv', sep = ''),
+#           file = paste(here::here('data', 'ProcData'), '/num_resight_WEST.csv', sep = ''),
 #           row.names = F)
 # write.csv(ch_m %>% filter(AnimalID %in% ids_m$AnimalID) %>%
 #             dplyr::select(-c(`2000`:`2010`)),
-#           file = paste(here::here('SSL_CJS', 'Data', 'ProcData'), '/ch_m_WEST.csv', sep = ''),
+#           file = paste(here::here('data', 'ProcData'), '/ch_m_WEST.csv', sep = ''),
 #           row.names = F)
 
 ```
@@ -268,8 +268,8 @@ brands <- inits %>%
   transform(reg_0 = factor(reg_0, levels = c('E GULF', 'C GULF', 'E ALEU', 'C ALEU', 'W ALEU'))) %>%
   arrange(reg_0)
 
-write.csv(brands_yr_reg, file = here::here('SSL_CJS', 'Data', 'ProcData', 'brands.csv'),
-          row.names = F)
+# write.csv(brands_yr_reg, file = here::here('data', 'ProcData', 'brands.csv'),
+#           row.names = F)
 
 
 ```
