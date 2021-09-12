@@ -20,9 +20,7 @@ ________________________________________________________________________________
 
 #### [Published PDF](link)
 
-This repository contains materials for the manuscript X.
-
-# Data can be found in this Dryad repository. [here](link)
+This repository contains materials for the manuscript X. Data can be found in this [Dryad repository](link). I don't think I need a dryad if everything is here on github?
 
 ### [Scripts](./scripts)
 
