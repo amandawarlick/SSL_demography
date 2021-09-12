@@ -20,22 +20,20 @@ ________________________________________________________________________________
 
 #### [Published PDF](link)
 
-### [scripts](./scripts)
-
-Contains code for running models and analyzing results. 
-
-### Data
-
-Contains raw and processed data: [data](./data) 
-
-### Results
-
-Contains figures and results: [results](./results)
-
 This repository contains materials for the manuscript X.
 
-Data can be found in this Dryad repository. [here](link)
+# Data can be found in this Dryad repository. [here](link)
 
+### [Scripts](./scripts)
 
+Contains code for creating capture histories, running models, and generating figures.
+
+### [Data](./data) 
+
+Contains raw and processed data.
+
+### [Results](./results)
+
+Contains raw and processed results.
 
 ![](imgs/clone.png)
