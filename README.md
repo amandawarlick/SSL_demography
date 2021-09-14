@@ -24,8 +24,10 @@ This repository contains materials for the manuscript X. Data can be found in th
 
 ### [Scripts](./scripts)
 
-Contains code for creating capture histories, running models, and generating figures.
-
++ SSL_CJS_CHdata.Rmd creates capture histories from raw data.
++ SSL_CJS.Rmd contains code for running models.
++ SSL_demographic_analysis.Rmd generates the manuscript file and sources helper script SSL_demographic_analysis_figs.R, which creates summary objects for inline references and figures.  
+ 
 ### [Data](./data) 
 
 Contains raw and processed data.
