@@ -1,9 +1,4 @@
-# library(FactoMineR)
-# library(knitr)
-# library(factoextra)
-# library(pastecs)
-# library(sciplot)
-# library(ggsci)
+
 library(dplyr)
 # library(cowplot)
 library(lubridate)
@@ -13,16 +8,8 @@ library(rgdal)
 library(broom)
 library(maptools)
 library(rmapshaper)
-# library(captioner)
 library(data.table)
-library(rstudioapi)
 library(ggsn)
-# library(ggsci)
-
-path <- getActiveDocumentContext()$path
-setwd(dirname(path))
-
-# source("PlotTheme.R")
 
 map_theme <- function(...) {
   theme(axis.line = element_blank(),
@@ -38,13 +25,12 @@ map_theme <- function(...) {
 }
 
 
-all_data <- read.csv("Data/ProcData/class_dat.csv", stringsAsFactors = F) %>%
+all_data <- read.csv(here::here("Data", "ProcData", "class_dat.csv"), stringsAsFactors = F) %>%
   dplyr::select(-c(NP_sum, diff)) %>%
   transform(Rookery = ifelse(Rookery == 1, "Rookery", "Haul-out")) %>%
   transform(Rookery = ifelse(is.na(Rookery), "Haul-out", Rookery)) %>%
   filter(Obs == 1) %>%
   transform(LON = ifelse(LON > 0, -180-(180-LON), LON)) %>%
-  #merge(ocean, by = 'Year') %>%
   filter(!is.na(Bull) & Site != '') %>%
   filter(!is.na(SAM)) %>%
   dplyr::rename(SiteType = Rookery) %>%
@@ -156,7 +142,6 @@ ak_map <- ggplot() +
   scale_color_manual(values = c('black', 'salmon2', 'deepskyblue3')) + #or dodgerblue3
   scale_shape_manual(values = c(17, 16, 16)) +
   scale_size_manual(guide = 'none', values = c(3, 1, 1.5)) +
-  # scale_alpha_manual(guide='none', values = c(1, 0.3, 0.3)) +
   #scale_y_continuous(limits = c(49, 63)) +
   map_theme() +
   scalebar(data = ak, dist = 25, dist_unit = "km",
@@ -225,6 +210,8 @@ cov_ref_new <- cov_ref %>%
                               'Camera trap', as.character(SiteType))) %>%
   transform(PopTrend = ifelse(Region %in% c('W. Aleu', 'C. Aleu'), 
                               'Decreasing', 'Stable/Increasing'))
+
+pdf(here("figures", "map.pdf"), width = 7, height = 5)
 ggplot() +
   geom_polygon(data = ak, aes(x = long, y = lat, group = group), fill = "grey93", color = "grey20", size = 0.3) +
   geom_point(data = cov_ref %>%
@@ -255,7 +242,7 @@ ggplot() +
   # scale_alpha_manual(guide='none', values = c(1, 0.3, 0.3)) +
   #scale_y_continuous(limits = c(49, 63)) +
   map_theme(legend.position = 'top')
-
+dev.off()
 
 ######survival and natality from other studies
 phi_dat <- read.csv(file = here::here('SSL_CJS', 'Data', 'SSL_DATA_R.csv'), header = T) %>%
