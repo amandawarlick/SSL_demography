@@ -8,10 +8,11 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r set up}
 
 library(here)
-library(dplyr)
+library(dplyr) #v1.0.5
 library(lubridate)
 library(reshape2)
 library(Hmisc) # %nin%
+
 
 ```
 

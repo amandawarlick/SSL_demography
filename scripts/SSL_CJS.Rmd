@@ -26,7 +26,7 @@ source(here::here('scripts', 'PlotTheme.R'))
 # phi4B survival of 4 year old breeders
 # phi5B survival of 5 year old breeders
 # phiB surv of breeders 6+ years old
-# phiSk surv of n.b. breeders 5+ years old 
+# phiNB surv of n.b. breeders 5+ years old 
 # phiPM surv pup to yearling male
 # phi1M surv of yearling male
 # phi2M surv of 2 male
