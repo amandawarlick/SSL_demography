@@ -212,7 +212,7 @@ getP_m <- nimbleFunction(
 ```
 
 
-##### range-wide models
+##### models for individuals branded in the eastern portion of the range
 
 ```{r load data EAST, echo = F, eval = T}
 
@@ -536,7 +536,6 @@ corrplot(cor$r, type = "lower", order = "original", p.mat = cor$P,
 
 ```
 
-
 ```{r null}
 
 SSL_CJS <- nimbleCode({
@@ -594,7 +593,7 @@ for (i in 1:n_fem) { #females
     }
   
   for (i in 1:n_m) { #males
-        for (t in 1:(n_occasions - 1)) {
+        for (t in 1:(n_occasions-1)) {
             logit(phiPM[i,t]) <- mu.PM 
             logit(p1M[i,t]) <- mean.p1M + b.eff[eff[t]] 
         } #t
@@ -732,7 +731,7 @@ for (t in (fc[i] + 1):n_occasions) {
     zm[i, fc_m[i]:fc_m[i]] <- 1
   for (t in (fc_m[i] + 1):n_occasions) {
     zm[i,t] ~ dcat(state_probs_m[i, t-1, 1:8])
-    ym[i,t] ~ dcat(event_probs_m[i,t,1:8])
+    ym[i,t] ~ dcat(event_probs_m[i, t, 1:8])
     
     state_probs_m[i,t-1,1:8] <- getPHI_m(z = zm[i,t-1], 
                                       phiPM = phiPM[i,t-1], phi1M = phi1M[i,t-1], phi2M = phi2M[i,t-1], 
@@ -1761,7 +1760,7 @@ elapsed <- Sys.time()-start
 ```
 
 
-##### West models
+##### Models for individuals branded in the western portion of the range
 
 ```{r load data WALEU and CALEU}
 
