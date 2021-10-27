@@ -230,7 +230,7 @@ nat_plot <- ggplot(nat.vals %>% filter(age != 'all'),
   scale_color_manual(values = c('black', 'grey65')) +
   scale_x_continuous(breaks = c(seq(5, 19, by = 2)), labels = c(seq(2004, 2018, by = 2)))
 
-#### time-varying predictions: use full model, chose entire non-breeding season #####
+#### time-varying predictions: use full model, chose entire non-breeding season covariates #####
 # east_out <- readRDS(here::here('results', paste0('out_full_east_NB.rds')))
 # 
 # all_pars <- colnames(east_out$samples$chain1)
