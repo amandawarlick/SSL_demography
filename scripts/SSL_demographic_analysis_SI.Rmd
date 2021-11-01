@@ -1,0 +1,79 @@
+---
+title: ""
+author: ""
+date: ""
+output:
+  bookdown::word_document2:
+    reference_docx: mytemplate.docx
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, eval = FALSE, warning = F, message = F, cache = T, cache.lazy = F)
+
+library(dplyr)
+library(reshape2)
+library(ggplot2)
+library(knitr)
+library(here)
+library(captioner)
+
+source(here::here('scripts', 'PlotTheme.R'))
+figs <- captioner(prefix = "Figure")
+
+```
+
+<br/>  
+   
+#### Supplemental information 
+
+We examined the effects of environmental variability on age- and sex-specific demographic rates for Steller sea lions in the western distinct population segment (DPS) in Alaska. Our aim was to identify correlations between changes in vital rates and oceanographic conditions for individuals branded in both the eastern and western portions of the DPS range where divergent abundance trends have been observed. 
+
+To examine these relationships for a top predator in a highly variable and complex ecosystem, we used both localized and basin-scale ocean conditions as covariates for pup and dependent young (age 1-2) survival and first-time and repeat female breeding probabilities. Estimating the effects of numerous environmental conditions simultaneously was facilitated by using penalized complexity priors as a variable selection tool. However, due to the temporal correlations within and between season-specific environmental values, not all possible variables could be simultaneously included and only one set of seasonal values could be used at a time. This limitation precluded identifying which environmental variable(s) were the strongest predictors based on changes in WAIC values. To address this issue, we ran models where each environmental variable was the sole predictor within the 'full' model framework, which included random effects of year for survival, breeding, and detection probabilities for individuals branded in the eastern portion of the range. The WAIC values for each of these single-covariate models were compared to that of the random effects-only model for the eastern portion of the range and the null model for the western portion of the range. This additional analysis both facilitated the initial elimination of numerous environmental variables and then ultimately provided insight into potential optimal season-specific combinations of different variables (e.g., AOI in summer and PDO in winter) that could be explored in future work.
+
+For models estimating vital rates for individuals branded in the eastern portion of the range, results when all variables were used indicated that best-fit models based on WAIC values included environmental variables from the winter season followed by the summer. However, only by examining the single-variable model runs was it possible to ascertain that winter Aleutian Low, upwelling, and eastward wind, year-round SST and chlorophyll-a concentration, and spring North Pacific Gyre Oscillation (NPGO) conditions were the strongest drivers of improved model fit when used alone (Figure S1). As can be seen, model runs with these predictors as the sole covariate had the lowest WAIC values. Additionally, these results provided support for the elimination of PDO, NPI, NOI, productivity, wind stress, and wind velocity based on the general lack of improvement in WAIC values across seasons compared to the random effects-only model.
+
+For models estimating vital rates for individuals branded in the western portion of the range, results when all variables were included indicated that best-fit models based on WAIC values included environmental variables from the fall and winter. Examining the single-variable model runs revealed that these gains in model fit were likely most attributable to the conditions of the NPGO during fall and spring and year-round chlorophyll and SST made the biggest contributions to improved model fit when used alone (Figure S1). These results provide justification for the elimination of wind variables, productivity, NPI, NOI, MEI, and PDO. 
+ 
+
+```{r figs, eval = T}
+
+#waic vals for single-cov mods
+waic_singles <- read.csv(file = here::here('results', 'waic_vals_singles.csv'),
+                         header = T, stringsAsFactors = F) %>%
+  transform(Season = factor(Season, levels = c('sum', 'fall', 'win', 'spr', 'NB'),
+                            labels = c('Summer', 'Fall', 'Winter', 'Spring', 'NB'))) %>%
+  #use RE for east instead of null, since that is the 'base' for the eastern region that you'd compare the environmental covariate models to
+  transform(null = ifelse(Region == 'east', RE, null)) %>%
+    transform(WAIC = ifelse(Var == 'albsa' & Season == 'Summer', NA, WAIC)) %>%
+  transform(Region = factor(Region, levels = c('east', 'west'),
+                            labels = c('Eastern', 'Western'))) %>%
+  transform(Var = factor(Var, levels = c('albsa', 'AOI', 'chla', 'MEI', 'NOI', 'npgo', 'NPI',
+                                         'PDO', 'prod', 'sst', 'up', 
+                                         'uwnd', 'vwnd', 'scal', 'curl'),
+                         labels = c('AL', 'AOI', 'chla', 'MEI', 'NOI', 'NPGO', 'NPI',
+                                         'PDO', 'Productivity', 'SST', 'Upwelling', 
+                                     'Eastward wind', 'Northward wind', 'Wind velocity', 'Wind stress')))
+
+fig_S1 <- ggplot(waic_singles, aes(Var, WAIC, group = Season, col = Season)) +
+  geom_point() +
+  geom_hline(aes(yintercept = null), linetype = 'dotted') +
+  facet_wrap(~Region, scales = 'free', nrow = 2) +
+  xlab('') + ylab('WAIC') +
+  plot_theme(legend.position = 'top', panel.border = element_rect(fill = NA),
+             legend.title = element_blank()) +
+  scale_color_manual(values = rainbow2[-c(1,4)])
+
+
+```
+
+
+```{r plot, eval = T, fig.align = 'center'}
+
+fig_S1
+
+```
+
+`r figs("fig_S1", caption = "WAIC values for models when each season-specific environmental variable was used as the only covariate. Dashed line represents a baseline WAIC value for the random effects-only model for the eastern portion of the range and a null model for the western portion of the range.")`
+
+
+

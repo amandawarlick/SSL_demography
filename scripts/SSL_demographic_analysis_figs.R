@@ -40,7 +40,7 @@ rainbow2 <- c("violetred4", "dodgerblue3", 'deepskyblue1', "#4aaaa5", "#a3d39c",
 ##########################################
 
 #### load in brands table created along with capture histories in data processing script ####
-brands_table <- read.csv(here::here('data', 'ProcData', 'brands.csv')) 
+brands_table <- read.csv(here::here('data', 'ProcData', 'brands.csv'))
 colnames(brands_table) <- gsub('X', '', colnames(brands_table))
 
 #### posteriors and posterior summaries: null model ####
@@ -166,7 +166,7 @@ nat.vals.w <- nat %>%
   transform(variable = sub("\\[.*", "", variable)) %>%
   transform(Region = 'Western')
 
-##combine regions
+##combine regions -- for plots and vital rates table
 phi.vals <- bind_rows(phi.vals.w, phi.vals.e) %>%
   transform(age = factor(age, levels = c('P', '1', '2', '3', '4', '5', 'B', 'NB', 'A'),
                          labels = c('P', '1', '2', '3', '4', '5', 'Breeder', 'Non-breeder', 'Adult'))) 
@@ -184,7 +184,69 @@ nat.vals <- bind_rows(nat.vals.w, nat.vals.e) %>%
                          ifelse(variable == 'nat5', '5',
                                 ifelse(variable == 'nat6plus', '6+', 'all'))))
 
-#plots
+#null model vital rates table
+phi_tab <- phi.vals %>%
+  # transform(age = ifelse(age %in% c('Breeder', 'Non-breeder'), 'Adult', age)) %>%
+  filter(grepl('int.phi', variable)) %>%
+  transform(med_e = round(med, 2), lower = round(lower,2), upper = round(upper,2)) %>%
+  transform(CI_e = paste0(lower, '-', upper)) %>% 
+  transform(Parameter = factor(variable, 
+                      levels = c('int.phiP', 'int.phiPM', 'int.phi1', 'int.phi1M',
+                                 'int.phi2', 'int.phi2M', 'int.phi3', 'int.phi3M',
+                                 'int.phi4', 'int.phi4M', 'int.phi5', 'int.phi5M',
+                                 'int.phiB', 'int.phiNB', 'int.phiBM'),
+                      labels = c('$\\phi_{P_F}$', '$\\phi_{P_M}$', 
+                                 '$\\phi_{1_F}$', '$\\phi_{1_M}$', 
+                                 '$\\phi_{2_F}$', '$\\phi_{2_M}$', 
+                                 '$\\phi_{3_F}$', '$\\phi_{3_M}$', 
+                                 '$\\phi_{4_F}$', '$\\phi_{4_M}$', 
+                                 '$\\phi_{5_F}$', '$\\phi_{5_M}$', 
+                                 '$\\phi_{B_F}$', '$\\phi_{NB_F}$', 
+                                 '$\\phi_{A_M}$'))) %>%
+  dplyr::select(age, Parameter, med_e, CI_e) %>% 
+  merge(phi.vals %>%
+          # transform(age = ifelse(age %in% c('Breeder', 'Non-breeder'), 'Adult', age)) %>%
+          filter(grepl('mu.', variable)) %>%
+          transform(med_w = round(med, 2), lower = round(lower,2), upper = round(upper,2)) %>%
+          transform(CI_w = paste0(lower, '-', upper)) %>% 
+          transform(Parameter = factor(variable, 
+                                       levels = c('mu.phi[1]', 'mu.phiM[1]', 'mu.phi[2]', 'mu.phiM[2]',
+                                                  'mu.phi[3]', 'mu.phiM[3]', 'mu.phi[4]', 'mu.phiM[4]',
+                                                  'mu.phi[5]', 'mu.phiM[5]', 'mu.phi[6]', 'mu.phiM[6]',
+                                                  'mu.A', 'mu.AM'),
+                                       labels = c('$\\phi_{P_F}$', '$\\phi_{P_M}$', 
+                                                  '$\\phi_{1_F}$', '$\\phi_{1_M}$', 
+                                                  '$\\phi_{2_F}$', '$\\phi_{2_M}$', 
+                                                  '$\\phi_{3_F}$', '$\\phi_{3_M}$', 
+                                                  '$\\phi_{4_F}$', '$\\phi_{4_M}$', 
+                                                  '$\\phi_{5_F}$', '$\\phi_{5_M}$', 
+                                                  '$\\phi_{A_F}$', '$\\phi_{A_M}$'))) %>%
+          dplyr::select(age, Parameter, med_w, CI_w), 
+        by = c('age', 'Parameter'), all = T) %>%
+  dplyr::select(Parameter, age, med_e, CI_e, med_w, CI_w) 
+
+nat_tab <- nat.vals %>% filter(!grepl('plus', variable) & Region == "Eastern" & year > 10) %>%
+                   group_by(age) %>%
+                   dplyr::summarize(med_e = round(mean(med),2), lower = round(mean(lower),2), 
+                                    upper = round(mean(upper),2), .groups = 'keep') %>%
+                   transform(CI_e = paste0(lower, '-', upper)) %>%
+                   transform(Parameter = factor(age, levels = c('4', '5', 'all'),
+                                                labels = c('$f_4$', '$f_5$', '$f$'))) %>%
+                   dplyr::select(age, Parameter, med_e, CI_e) %>%
+  merge(nat.vals %>% filter(!grepl('plus', variable) & Region == "Western" & year > 16) %>%
+                    group_by(age) %>%
+                    dplyr::summarize(med_w = round(mean(med),2), lower = round(mean(lower),2), 
+                                     upper = round(mean(upper),2), .groups = 'keep') %>%
+                    transform(CI_w = paste0(lower, '-', upper)) %>%
+                    transform(Parameter = factor(age, levels = c('4', '5', 'all'),
+                                                 labels = c('$f_4$', '$f_5$', '$f$'))) %>%
+                    dplyr::select(age, Parameter, med_w, CI_w), by = c('age', 'Parameter'))
+        
+pars_tab <- bind_rows(phi_tab, nat_tab)     
+row.names(pars_tab) <- NULL
+colnames(pars_tab) <- c('Parameter', 'Age class', 'Eastern', '95% CI', 'Western', '95% CI')
+
+#null model plots
 phi_plot <- ggplot(phi.vals, aes(age, med), col = Region, group = Region) +
   geom_linerange(aes(ymin = lower, ymax = upper, col = Region, group = Region), 
                  position = position_dodge(0.5), size = 0.5) +
@@ -456,7 +518,9 @@ bmi_dat <- cov_dat %>% filter(grepl('mass', variable)) %>%
   transform(sex = ifelse(variable %in% c('b.massPM', 'b.mass1M'), 'Male', 'Female')) %>%
   transform(age = factor(age, levels = c('P', '1-2','First time','Repeat'),
                          labels = c('Pup survival', 'Young survival', 
-                                    'First time breeding', 'Repeat breeding')))
+                                    'First time breeding', 'Repeat breeding'))) %>%
+  transform(Region = factor(Region, levels = c('east', 'west'), 
+                            labels = c('Eastern', 'Western')))
 bmi_plot <- ggplot(bmi_dat %>% filter(age != 'Repeat breeding'), 
                    aes(age, med, col = sex, group = sex)) +
   geom_linerange(aes(ymin = lower, ymax = upper), size = 0.5, position = position_dodge(width = 0.5)) +
@@ -488,7 +552,7 @@ env_east_plot <- ggplot(env_dat_e, aes(x = age, y = med), col = Season, group = 
   geom_point(aes(x = age, y = med, col = Season, group = Season), size = 0.8, 
              position = position_dodge(0.5)) +
   geom_hline(yintercept = 0, linetype = 'dotted') +
-  ylab(expression(paste('Logit-scale effect on demographic rates'))) + xlab('') +
+  ylab(expression(paste('Logit-scale effect of environmental variable'))) + xlab('') +
   plot_theme(legend.position = 'top', panel.border = element_rect(fill = NA),
              legend.title = element_blank()) +
   facet_wrap(~var_name) +
@@ -511,7 +575,7 @@ env_west_plot <- ggplot(env_dat_w, aes(age, med), col = Season, group = Season) 
                  position = position_dodge(0.5), size = 0.5) +
   geom_point(aes(col = Season, group = Season), position = position_dodge(0.5), size = 0.8) +
   geom_hline(yintercept = 0, linetype = 'dotted') +
-  ylab(expression(paste('Logit-scale effect on demographic rates'))) + xlab('') +
+  ylab(expression(paste('Logit-scale effect of environmental variable'))) + xlab('') +
   plot_theme(legend.position = 'top', panel.border = element_rect(fill = NA),
              legend.title = element_blank()) +
   facet_wrap(~var_name) +
