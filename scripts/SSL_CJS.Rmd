@@ -4,10 +4,10 @@
 
 knitr::opts_chunk$set(echo = FALSE, eval = FALSE, message = F, warning = F)
 
-library(here)
-library(dplyr)
-library(corrplot)
-library(nimble)
+library(here) #v1.0.1
+library(dplyr) #v1.0.5
+# library(corrplot) 
+library(nimble) #v0.12.1
 
 source(here::here('scripts', 'PlotTheme.R'))
 
@@ -755,7 +755,8 @@ params <- c('mean.p1', 'mean.p2', 'mean.p3', 'mean.p4', 'mean.p5', 'mean.pB', 'm
             'mu.PM', 'mu.1M', 'mu.2M', 'mu.3M', 'mu.4M', 'mu.5M', 'mu.BM')
 
 ### run model
-n.iter = 35000; n.chains = 3; n.burnin = 20000; nthin = 3; nAdapt = 20
+# n.iter = 35000; n.chains = 3; n.burnin = 20000; nthin = 3; nAdapt = 20
+n.iter = 500; n.chains = 3; n.burnin = 100; nthin = 3; nAdapt = 20
 
 start <- Sys.time()
 
@@ -764,11 +765,10 @@ Rmodel <- nimbleModel(code = SSL_CJS,
                       calculate = F, check = F, inits = inits)
 
 conf <- configureMCMC(Rmodel, monitors = params, control = list(adaptInterval = nAdapt), 
-                      thin = nthin, useConjugacy = FALSE)
+                      thin = nthin, useConjugacy = FALSE, enableWAIC = TRUE)
 
 
-Rmcmc <- buildMCMC(conf, enableWAIC = TRUE)  #produce uncompiled R mcmc function
-# Rmcmc <- buildMCMC(conf)
+Rmcmc <- buildMCMC(conf)  #produce uncompiled R mcmc function
 Cmodel <- compileNimble(Rmodel)
 Cmcmc <- compileNimble(Rmcmc, project = Rmodel)
 
@@ -780,7 +780,7 @@ out <- runMCMC(Cmcmc, niter = n.iter, nburnin = n.burnin, nchains = n.chains, in
 
 elapsed <- Sys.time()-start
 
-saveRDS(out, here::here('results', 'out_null_east.rds'))
+# saveRDS(out, here::here('results', 'out_null_east.rds'))
 
 all_pars <- colnames(out$samples$chain1)
 noZ <- all_pars[which(!grepl('z', all_pars))]
@@ -1625,7 +1625,7 @@ inits <- list(int.phiP = 0.9, int.phiPM = 0.9, int.phi1 = 0.9, int.phi1M = 0.9,
               mean.p5 = qlogis(0.4), mean.pB = 0.8, mean.pNB = qlogis(0.4),
               mean.p1M = qlogis(0.5), mean.p2M = qlogis(0.5), mean.p3M = qlogis(0.5), 
               mean.p4M = qlogis(0.5), mean.pBM = qlogis(0.8), mean.p5M = qlogis(0.6),
-              eps.p = c(rep(0, n_occasions)), #detection
+              eps.p = c(rep(0, n_occasions)), 
               epsP = rep(0, n_occasions-1), eps1 = rep(0, n_occasions-1), eps2 = rep(0, n_occasions-1),
               epsPB = rep(0, n_occasions-1), epsB = rep(0, n_occasions-1), 
               epsNB = rep(0, n_occasions-1), epsBM = rep(0, n_occasions-1),

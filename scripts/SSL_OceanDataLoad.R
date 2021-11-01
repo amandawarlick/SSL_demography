@@ -261,7 +261,6 @@ colnames(NOI) <- c('adj_year', paste('NOI', c('NB', 'fall', 'spring', 'summer', 
 # NPI (monthly)
 NPI_raw <- read.csv(here::here('data', 'Ocean/NPI_mo.csv'), header = T, stringsAsFactors = F) %>%
   transform(year = as.numeric(substr(Date, 1,4)), month = as.numeric(substr(Date, 5, 6))) %>%
-  transform(NPI = scale(NPI)) %>%
   filter(year > 1999 & year < 2019) %>% dplyr::select(-Date) %>%
   transform(yr = as.numeric(factor(year))) %>%
   transform(type = ifelse(month %in% NB, 'NB', 'B')) %>%
