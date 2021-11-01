@@ -1,6 +1,5 @@
 
 library(dplyr)
-# library(cowplot)
 library(lubridate)
 library(reshape2)
 library(tibble)
@@ -25,7 +24,7 @@ map_theme <- function(...) {
 }
 
 
-all_data <- read.csv(here::here("Data", "ProcData", "class_dat.csv"), stringsAsFactors = F) %>%
+all_data <- read.csv(here::here('SSL_CJS', "Data", "ProcData", "class_dat.csv"), stringsAsFactors = F) %>%
   dplyr::select(-c(NP_sum, diff)) %>%
   transform(Rookery = ifelse(Rookery == 1, "Rookery", "Haul-out")) %>%
   transform(Rookery = ifelse(is.na(Rookery), "Haul-out", Rookery)) %>%
@@ -57,7 +56,7 @@ canada <- map_data("world", region = "Canada") %>%
   transform(group = factor(group))
 
 wd <- getwd()
-dir_spatial <- paste0(wd, "/Data/")
+dir_spatial <- paste0(wd, "/SSL_CJS/Data/")
 dir_shp <- paste0(dir_spatial, "gz_2010_us_040_00_500k")
 
 us_shp <- readOGR(dsn = dir_shp, layer = "gz_2010_us_040_00_500k")
@@ -89,12 +88,12 @@ reg_loc <- cov_ref %>%
 
 #map with environmental variable boxes
 #agattu and ulak
-xcoord_west <- c(-190.6, -177)
+xcoord_west <- c(-190, -177)
 ycoord_west <- c(50.00, 55)
 
 # #eastern aleutians
 xcoord_east_low <- c(-169, -145.5)
-ycoord_east_low <- c(50, 60)
+ycoord_east_low <- c(50.6, 60)
 xcoord_east_high <- c(-170.5,-159.25)
 ycoord_east_high <- c(55.5, 58)
 xcoord_east_mid2 <- -156
@@ -211,7 +210,7 @@ cov_ref_new <- cov_ref %>%
   transform(PopTrend = ifelse(Region %in% c('W. Aleu', 'C. Aleu'), 
                               'Decreasing', 'Stable/Increasing'))
 
-pdf(here("figures", "map.pdf"), width = 7, height = 5)
+pdf(here("SSL_CJS", "figures", "map.pdf"), width = 7, height = 5)
 ggplot() +
   geom_polygon(data = ak, aes(x = long, y = lat, group = group), fill = "grey93", color = "grey20", size = 0.3) +
   geom_point(data = cov_ref %>%
@@ -228,14 +227,46 @@ ggplot() +
                  fill = SiteType, group = rev(SiteType))) +
   geom_segment(data = reg_loc,
                aes(x = -144, xend = -144, y = 40, yend = 60), linetype = 'dotted') +
-  annotate("text", x = reg_loc$mean_long - 1*(c(0, 2, 2, 0.5, 1.5, 1, 6.5)),
-           y = c(50.3, 50, 50.5, 51.9, 53.5, 55, 56),
+  #western
+  geom_segment(data = reg_loc,
+               aes(x = xcoord_west[1], xend = xcoord_west[1], 
+                   y = ycoord_west[2], yend = ycoord_west[1])) +
+  geom_segment(data = reg_loc,
+               aes(x = xcoord_west[2], xend = xcoord_west[2], 
+                   y = ycoord_west[2], yend = ycoord_west[1])) +
+  geom_segment(data = reg_loc,
+               aes(x = xcoord_west[1], xend = xcoord_west[2], 
+                   y = ycoord_west[1], yend = ycoord_west[1])) +
+  geom_segment(data = reg_loc,
+               aes(x = xcoord_west[1], xend = xcoord_west[2], 
+                   y = ycoord_west[2], yend = ycoord_west[2])) +
+  #eastern
+  geom_segment(data = reg_loc,
+               aes(x = xcoord_east_high[2], xend = xcoord_east_low[2], 
+                   y = ycoord_east_high[2], yend = ycoord_east_low[2])) +
+  geom_segment(data = reg_loc,
+               aes(x = xcoord_east_high[1], xend = xcoord_east_high[2], 
+                   y = ycoord_east_high[1], yend = ycoord_east_high[2])) +
+  geom_segment(data = reg_loc,
+               aes(x = xcoord_east_high[1], xend = xcoord_east_low[1], 
+                   y = ycoord_east_high[1], yend = ycoord_east_low[1])) +
+  geom_segment(data = reg_loc,
+               aes(x = xcoord_east_low[2], xend = xcoord_east_mid,
+                   y = ycoord_east_low[2], yend = ycoord_east_mid)) +
+  geom_segment(data = reg_loc,
+               aes(x = xcoord_east_low[1], xend = xcoord_east_mid2,
+                   y = ycoord_east_low[1], yend = ycoord_east_mid2)) +
+  geom_segment(data = reg_loc,
+               aes(x = xcoord_east_mid2, xend = xcoord_east_mid,
+                   y = ycoord_east_mid2, yend = ycoord_east_mid)) +
+  annotate("text", x = reg_loc$mean_long - 1*(c(1, 2, 2, 0.5, 1.5, 1, 6.5)),
+           y = c(49.2, 49, 50.1, 51.5, 53.5, 55, 56),
            color = c('palegreen4', 'palegreen4', 'deepskyblue4', 'deepskyblue4',
                      'deepskyblue4', 'deepskyblue4', 'black'),
            label = reg_loc$Region, size = 3, hjust = 0, fontface = 'bold.italic') +
-  annotate("text", x = c(-170, -136), y = 48,
+  annotate("text", x = c(-170, -136), y = 47,
            label = c('Western DPS', 'Eastern DPS'), size = 3, fontface = 'bold') +
-  coord_fixed(1.5, ylim = c(48, 67), xlim = c(-188, -131)) +
+  coord_fixed(1.5, ylim = c(47, 67), xlim = c(-188, -131)) +
   scale_shape_manual(values = c(22, 24, 21)) +
   scale_size_manual(guide = 'none', values = c(3, 3, 1.5)) +
   scale_fill_manual(values = c('palegreen3', 'deepskyblue2', 'salmon2')) +

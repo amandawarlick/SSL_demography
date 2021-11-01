@@ -11,11 +11,8 @@ library(nimble)
 
 source(here::here('scripts', 'PlotTheme.R'))
 
-#test push new computer
-
 
 ```
-
 
 ```{r params states}
 # Parameters:
@@ -25,47 +22,36 @@ source(here::here('scripts', 'PlotTheme.R'))
 # phi3 surv of 3 pre-breeder
 # phi4 surv of 4 pre-breeder
 # phi5 surv of 5 pre-breeder
-# phi4B survival of 4 year old breeders
-# phi5B survival of 5 year old breeders
 # phiB surv of breeders 6+ years old
-# phiNB surv of n.b. breeders 5+ years old 
+# phiNB surv of NB breeders 5+ years old 
 # phiPM surv pup to yearling male
 # phi1M surv of yearling male
 # phi2M surv of 2 male
 # phi3M surv of 3 male
 # phi4M surv of 4 male
 # phi5M surv of 5+male
-# phiBM surv of territorial males
-# phiNBM surv of non-territorial males
+# phiBM
     
 # psi3 = prob of 3 year old becoming 4 year old B
 # psi4 = prob of 4 year old becoming 5 year old B
 # psi5 = prob of 5 year old becoming 6 year old B 
 # psiB = prob of staying breeder given were a breeder
-# psiSk = prob of becoming breeder given were a NB
-# psi5M = prob of 5 yr male becoming 6 yr territorial male
-# psiBM = prob of territorial male staying breeder - should be close to 1
-# psiNBM = prob of non-territorial male becoming territorial breeder
-    
+# psiNB = prob of becoming breeder given were a NB
+
 # p1 = detection of yearling
 # P2 = detection of 2
-# p3 = detection of 3 (pre-breeder)
+# p3 = detection of 3 
 # p4 = detection of 4
 # p5 = detection of 5
 # pB = detection of B
-# pSk = detection of Sk 
+# pNB = detection of NB 
 # p1M = detection of yearling male
 # P2M = detection of 2 male
 # p3M = detection of 3 male
 # p4M = detection of 4 male
 # p5M = detection of 5 male
 # pBM = detection of territorial males 6+
-# pNBM = detection of non-ter males 6+
-    
-# delPB = prob of correctly ascertaining presence of pup for prebreeders #not in model, no false + 
 # delB = prob of correctly ascertaining presence of pup for breeders
-# delSk = prob of correctly ascertaining presence of pup for NBs #not in model, no false +
-# delBM = prob of correctly ascertaining territoriality of adult male
 
 # OBSERVATIONS
 # 1 = pup w/o
@@ -85,8 +71,7 @@ source(here::here('scripts', 'PlotTheme.R'))
 # 4 = 3 male
 # 5 = 4 male
 # 6 = 5 male
-# 7 = 6+ male territory
-# 8 = 6+ male w/o territory
+# 7 = 6+ male 
 # 9 = ND male
 
 # STATES
@@ -99,8 +84,8 @@ source(here::here('scripts', 'PlotTheme.R'))
 # 7 = 4B
 # 8 = 5B
 # 9 = 6+B
-# 10 = 5Sk
-# 11 = 6+Sk
+# 10 = 5NB
+# 11 = 6+NB
 # 12 = dead
 # 1 = pup_m
 # 2 = 1m
@@ -108,9 +93,8 @@ source(here::here('scripts', 'PlotTheme.R'))
 # 4 = 3m
 # 5 = 4m
 # 6 = 5m
-# 7 = territorial male
-# 8 = non-territorial male
-# 9 = D_m
+# 7 = adult male
+# 8 = D_m
 
 #4 yo natality: 7/(5+7)
 #5 yo natality: 8/(8+6+10)
@@ -223,7 +207,7 @@ ch_fem <- read.csv(here::here('data', 'ProcData','ch_fem_EAST.csv'),
 ch_male <- read.csv(here::here('data', 'ProcData', 'ch_m_EAST.csv'),
                     header = T, stringsAsFactors = F)
 
-#number of times seen per year
+#number of times females seen per year
 resights <- read.csv(here::here('data', 'ProcData', 'num_resight_EAST.csv'),
                      header = T, stringsAsFactors = F)
 
@@ -238,15 +222,6 @@ eff[c(6,17,18)] <- 2 #less effort in 2006, 2017-2018 (no field camps)
 mass_f <- ch_fem$Mass_std
 mass_m <- ch_male$Mass_std
 
-#not ultimately estimating any regional effects
-#general levels = 'W ALEU', 'Other' (reg_0b)
-# region_f <- as.numeric(factor(ch_fem$reg_0c)) 
-# region_m <- as.numeric(factor(ch_male$reg_0c)) 
-
-#detailed levels = "C ALEU" "C GULF" "E ALEU" "E GULF" (reg_0)
-# reg_f <- as.numeric(factor(ch_fem$reg_0)) 
-# reg_m <- as.numeric(factor(ch_male$reg_0)) 
-
 ```
 
 ```{r fc inits}
@@ -254,7 +229,6 @@ mass_m <- ch_male$Mass_std
 ##female
 #first capture
 get.first <- function(x) min(which(x == 1)) #pups only
-# get.first <- function(x) min(which(x != 11)) #include animals branded as non-pups
 fc <- apply(ch_fem[,-c(1:7)], 1, get.first)
 
 ch <- ch_fem[,-c(1:7)]
@@ -436,8 +410,6 @@ AOI <- as.numeric(scale(eval(parse(text = paste0('ocean_SSL$AOI_', seas, '[', st
 upwell <- as.numeric(scale(eval(parse(text = paste0('ocean_SSL$upwell_', seas, '[', start,':', stop,']')))))
 chla <- as.numeric(scale(eval(parse(text = paste0('ocean_SSL$chla_', seas, '[', start,':', stop,']')))))
 sst <- as.numeric(scale(eval(parse(text = paste0('ocean_SSL$sst_', seas, '[', start,':', stop,']')))))
-# ssh <- as.numeric(scale(eval(parse(text = paste0('ocean_SSL$ssh_', seas, '[', start,':', stop,']')))))
-# mld <- as.numeric(scale(eval(parse(text = paste0('ocean_SSL$mld_', seas, '[', start,':', stop,']')))))
 vwnd <- as.numeric(scale(eval(parse(text = paste0('ocean_SSL$vwnd_', seas, '[', start,':', stop,']')))))
 uwnd <- as.numeric(scale(eval(parse(text = paste0('ocean_SSL$uwnd_', seas, '[', start,':', stop,']')))))
 NOI <- as.numeric(scale(eval(parse(text = paste0('ocean_SSL$NOI_', seas, '[', start,':', stop,']')))))
@@ -452,10 +424,6 @@ PDO[is.na(PDO)] <- 0
 AOI[is.na(AOI)] <- 0
 upwell[is.na(upwell)] <- 0
 npgo[is.na(npgo)] <- 0
-# MEI[is.na(MEI)] <- 0
-# temp[is.na(temp)] <- 0
-# ssh[is.na(ssh)] <- 0
-# mld[is.na(mld)] <- 0
 chla[is.na(chla)] <- 0
 sst[is.na(sst)] <- 0
 vwnd[is.na(vwnd)] <- 0
@@ -464,75 +432,74 @@ prod[is.na(prod)] <- 0
 NOI[is.na(NOI)] <- 0
 scal[is.na(scal)] <- 0
 
-
-### Correlations
-library(Hmisc)
-
-## single season - all variables
-flattenCorrMatrix <- function(cormat, pmat) {
-  ut <- upper.tri(cormat)
-  data.frame(
-    row = rownames(cormat)[row(cormat)[ut]],
-    column = rownames(cormat)[col(cormat)[ut]],
-    cor  =(cormat)[ut],
-    p = pmat[ut]
-  )
-}
-cor <- rcorr(as.matrix(ocean_SSL[,grepl('win', colnames(ocean_SSL))]))
-cor_vals <- flattenCorrMatrix(cor$r, cor$P) %>% arrange(cor)
-corrplot(cor$r, type = "lower", order = "original", p.mat = cor$P,
-         insig = "blank", sig.level = 0.01, tl.col = "black", tl.cex = .9, number.cex = .2)
-
-#strongly correlated variables
-#NB: PDO-MEI/NOI/NPI, albsa-NPI
-# spring: PDO-NOI/NPI/SST, albsa-curl, NPI-up, sst-MEI
-#summer: MEI-PDO/NPGO, albsa-NPI, AOI-NPI, MEI-NOI
-#fall: NOI-PDO, PDO-MEI, NOI-MEI, AOI-albsa
-#winter: NPI-albsa, MEI-albsa, MEI-PDO, uwnd-PDO, curl-albsa, curl-chla
-
-## multiple seasons
-# cor <- rcorr(as.matrix(ocean_SSL[,c(2:76)]))
+### To examine correlations
+# library(Hmisc)
+# 
+# ## single season - all variables
+# flattenCorrMatrix <- function(cormat, pmat) {
+#   ut <- upper.tri(cormat)
+#   data.frame(
+#     row = rownames(cormat)[row(cormat)[ut]],
+#     column = rownames(cormat)[col(cormat)[ut]],
+#     cor  =(cormat)[ut],
+#     p = pmat[ut]
+#   )
+# }
+# cor <- rcorr(as.matrix(ocean_SSL[,grepl('win', colnames(ocean_SSL))]))
 # cor_vals <- flattenCorrMatrix(cor$r, cor$P) %>% arrange(cor)
 # corrplot(cor$r, type = "lower", order = "original", p.mat = cor$P,
 #          insig = "blank", sig.level = 0.01, tl.col = "black", tl.cex = .9, number.cex = .2)
-
-#single variable across all seasons
-# cor <- rcorr(as.matrix(ocean_SSL[,grepl('PDO', colnames(ocean_SSL))]))
-# cor_vals <- flattenCorrMatrix(cor$r, cor$P) %>% arrange(cor)
-# corrplot(cor$r, type = "lower", order = "original", p.mat = cor$P,
-#          insig = "blank", sig.level = 0.01, tl.col = "black", tl.cex = .9, number.cex = .2)
-# cor <- rcorr(as.matrix(ocean_SSL[,grepl('MEI', colnames(ocean_SSL))]))
-# cor_vals <- flattenCorrMatrix(cor$r, cor$P) %>% arrange(cor)
-# corrplot(cor$r, type = "lower", order = "original", p.mat = cor$P,
-#          insig = "blank", sig.level = 0.01, tl.col = "black", tl.cex = .9, number.cex = .2)
-# cor <- rcorr(as.matrix(ocean_SSL[,grepl('sst', colnames(ocean_SSL))]))
-# cor_vals <- flattenCorrMatrix(cor$r, cor$P) %>% arrange(cor)
-# corrplot(cor$r, type = "lower", order = "original", p.mat = cor$P,
-#          insig = "blank", sig.level = 0.01, tl.col = "black", tl.cex = .9, number.cex = .2)
-# cor <- rcorr(as.matrix(ocean_SSL[,grepl('ssh', colnames(ocean_SSL))]))
-# cor_vals <- flattenCorrMatrix(cor$r, cor$P) %>% arrange(cor)
-# corrplot(cor$r, type = "lower", order = "original", p.mat = cor$P,
-#          insig = "blank", sig.level = 0.01, tl.col = "black", tl.cex = .9, number.cex = .2)
-# cor <- rcorr(as.matrix(ocean_SSL[,grepl('chla', colnames(ocean_SSL))]))
-# cor_vals <- flattenCorrMatrix(cor$r, cor$P) %>% arrange(cor)
-# corrplot(cor$r, type = "lower", order = "original", p.mat = cor$P,
-#          insig = "blank", sig.level = 0.01, tl.col = "black", tl.cex = .9, number.cex = .2)
-# cor <- rcorr(as.matrix(ocean_SSL[,grepl('mld', colnames(ocean_SSL))]))
-# cor_vals <- flattenCorrMatrix(cor$r, cor$P) %>% arrange(cor)
-# corrplot(cor$r, type = "lower", order = "original", p.mat = cor$P,
-#          insig = "blank", sig.level = 0.01, tl.col = "black", tl.cex = .9, number.cex = .2)
-# cor <- rcorr(as.matrix(ocean_SSL[,grepl('up', colnames(ocean_SSL))]))
-# cor_vals <- flattenCorrMatrix(cor$r, cor$P) %>% arrange(cor)
-# corrplot(cor$r, type = "lower", order = "original", p.mat = cor$P,
-#          insig = "blank", sig.level = 0.01, tl.col = "black", tl.cex = .9, number.cex = .2)
-# cor <- rcorr(as.matrix(ocean_SSL[,grepl('vwnd', colnames(ocean_SSL))]))
-# cor_vals <- flattenCorrMatrix(cor$r, cor$P) %>% arrange(cor)
-# corrplot(cor$r, type = "lower", order = "original", p.mat = cor$P,
-#          insig = "blank", sig.level = 0.01, tl.col = "black", tl.cex = .9, number.cex = .2)
-# cor <- rcorr(as.matrix(ocean_SSL[,grepl('AOI', colnames(ocean_SSL))])) 
-# cor_vals <- flattenCorrMatrix(cor$r, cor$P) %>% arrange(cor) 
-# corrplot(cor$r, type = "lower", order = "original", p.mat = cor$P,
-#          insig = "blank", sig.level = 0.01, tl.col = "black", tl.cex = .9, number.cex = .2)
+# 
+# #strongly correlated variables
+# #NB: PDO-MEI/NOI/NPI, albsa-NPI
+# # spring: PDO-NOI/NPI/SST, albsa-curl, NPI-up, sst-MEI
+# #summer: MEI-PDO/NPGO, albsa-NPI, AOI-NPI, MEI-NOI
+# #fall: NOI-PDO, PDO-MEI, NOI-MEI, AOI-albsa
+# #winter: NPI-albsa, MEI-albsa, MEI-PDO, uwnd-PDO, curl-albsa, curl-chla
+# 
+# ## multiple seasons
+# # cor <- rcorr(as.matrix(ocean_SSL[,c(2:76)]))
+# # cor_vals <- flattenCorrMatrix(cor$r, cor$P) %>% arrange(cor)
+# # corrplot(cor$r, type = "lower", order = "original", p.mat = cor$P,
+# #          insig = "blank", sig.level = 0.01, tl.col = "black", tl.cex = .9, number.cex = .2)
+# 
+# #single variable across all seasons
+# # cor <- rcorr(as.matrix(ocean_SSL[,grepl('PDO', colnames(ocean_SSL))]))
+# # cor_vals <- flattenCorrMatrix(cor$r, cor$P) %>% arrange(cor)
+# # corrplot(cor$r, type = "lower", order = "original", p.mat = cor$P,
+# #          insig = "blank", sig.level = 0.01, tl.col = "black", tl.cex = .9, number.cex = .2)
+# # cor <- rcorr(as.matrix(ocean_SSL[,grepl('MEI', colnames(ocean_SSL))]))
+# # cor_vals <- flattenCorrMatrix(cor$r, cor$P) %>% arrange(cor)
+# # corrplot(cor$r, type = "lower", order = "original", p.mat = cor$P,
+# #          insig = "blank", sig.level = 0.01, tl.col = "black", tl.cex = .9, number.cex = .2)
+# # cor <- rcorr(as.matrix(ocean_SSL[,grepl('sst', colnames(ocean_SSL))]))
+# # cor_vals <- flattenCorrMatrix(cor$r, cor$P) %>% arrange(cor)
+# # corrplot(cor$r, type = "lower", order = "original", p.mat = cor$P,
+# #          insig = "blank", sig.level = 0.01, tl.col = "black", tl.cex = .9, number.cex = .2)
+# # cor <- rcorr(as.matrix(ocean_SSL[,grepl('ssh', colnames(ocean_SSL))]))
+# # cor_vals <- flattenCorrMatrix(cor$r, cor$P) %>% arrange(cor)
+# # corrplot(cor$r, type = "lower", order = "original", p.mat = cor$P,
+# #          insig = "blank", sig.level = 0.01, tl.col = "black", tl.cex = .9, number.cex = .2)
+# # cor <- rcorr(as.matrix(ocean_SSL[,grepl('chla', colnames(ocean_SSL))]))
+# # cor_vals <- flattenCorrMatrix(cor$r, cor$P) %>% arrange(cor)
+# # corrplot(cor$r, type = "lower", order = "original", p.mat = cor$P,
+# #          insig = "blank", sig.level = 0.01, tl.col = "black", tl.cex = .9, number.cex = .2)
+# # cor <- rcorr(as.matrix(ocean_SSL[,grepl('mld', colnames(ocean_SSL))]))
+# # cor_vals <- flattenCorrMatrix(cor$r, cor$P) %>% arrange(cor)
+# # corrplot(cor$r, type = "lower", order = "original", p.mat = cor$P,
+# #          insig = "blank", sig.level = 0.01, tl.col = "black", tl.cex = .9, number.cex = .2)
+# # cor <- rcorr(as.matrix(ocean_SSL[,grepl('up', colnames(ocean_SSL))]))
+# # cor_vals <- flattenCorrMatrix(cor$r, cor$P) %>% arrange(cor)
+# # corrplot(cor$r, type = "lower", order = "original", p.mat = cor$P,
+# #          insig = "blank", sig.level = 0.01, tl.col = "black", tl.cex = .9, number.cex = .2)
+# # cor <- rcorr(as.matrix(ocean_SSL[,grepl('vwnd', colnames(ocean_SSL))]))
+# # cor_vals <- flattenCorrMatrix(cor$r, cor$P) %>% arrange(cor)
+# # corrplot(cor$r, type = "lower", order = "original", p.mat = cor$P,
+# #          insig = "blank", sig.level = 0.01, tl.col = "black", tl.cex = .9, number.cex = .2)
+# # cor <- rcorr(as.matrix(ocean_SSL[,grepl('AOI', colnames(ocean_SSL))])) 
+# # cor_vals <- flattenCorrMatrix(cor$r, cor$P) %>% arrange(cor) 
+# # corrplot(cor$r, type = "lower", order = "original", p.mat = cor$P,
+# #          insig = "blank", sig.level = 0.01, tl.col = "black", tl.cex = .9, number.cex = .2)
 
 ```
 
@@ -700,7 +667,7 @@ for (i in 1:n_fem) { #females
     b.delB[2] <- log(p.delB[2]/(1-p.delB[2]))
     p.delB[3] ~ dunif(0,1)
     b.delB[3] <- log(p.delB[3]/(1-p.delB[3]))
-    b.delB[4] <- -5 #0 on probability scale...? help check
+    b.delB[4] <- -5 #0 on probability scale
 
     b.eff[1] <- 0
     b.eff[2] ~ dnorm(0, 0.001)
@@ -746,7 +713,6 @@ for (t in (fc[i] + 1):n_occasions) {
 }) # mod   
 
 ##### run model ####
-
 nim.data <- list(y = y, ym = ym, 
                  z = z.st, zm = z.st.m)
 
@@ -789,8 +755,6 @@ params <- c('mean.p1', 'mean.p2', 'mean.p3', 'mean.p4', 'mean.p5', 'mean.pB', 'm
             'mu.PM', 'mu.1M', 'mu.2M', 'mu.3M', 'mu.4M', 'mu.5M', 'mu.BM')
 
 ### run model
-# n.iter = 30; n.chains = 2; n.burnin = 10; nthin = 1; nAdapt = 4
-# n.iter = 1000; n.chains = 2; n.burnin = 500; nthin = 1; nAdapt = 20
 n.iter = 35000; n.chains = 3; n.burnin = 20000; nthin = 3; nAdapt = 20
 
 start <- Sys.time()
@@ -824,7 +788,6 @@ rhats <- gelman.diag(out$samples[,noZ], multivariate=F, autoburnin=F)
 # traceplot(out$samples[,noZ[1:45]])
 
 ```
-
 
 ```{r RE}
 
@@ -1440,7 +1403,7 @@ for (i in 1:n_fem) { #females
     b.delB[2] <- log(p.delB[2]/(1-p.delB[2]))
     p.delB[3] ~ dunif(0,1)
     b.delB[3] <- log(p.delB[3]/(1-p.delB[3]))
-    b.delB[4] <- -5 #0 on probability scale...? check help
+    b.delB[4] <- -5 #0 on probability scale
 
     b.eff[1] <- 0
     b.eff[2] ~ dnorm(0, 0.001)
