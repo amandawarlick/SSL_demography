@@ -342,7 +342,7 @@ Conn, P.B., D.S. Johnson, L.W. Fritz, and B.S. Fadely. 2014. Examining the Utili
 Copernicus Marine Environment Monitoring Service, 2020.  https://resources.marine.copernicus.eu/documents/PUM/CMEMS-MOB-PUM-015-002.pdf
 
 de Valpine, P., D. Turek, C.J. Paciorek, C. Anderson-Bergman, D. Temple Lang, an
-  Bodik. NIMBLE Development Team. 2017. Programming with models: writing statistical algorithms for general model structures with NIMBLE. Journal of Computational and Graphical Statistics 26: 403-413. <DOI:10.1080/10618600.2016.1172487>.
+  Bodik. NIMBLE Development Team. 2019. Programming with models: writing statistical algorithms for general model structures with NIMBLE. Journal of Computational and Graphical Statistics 26: 403-413. <DOI:10.1080/10618600.2016.1172487>.
 
 Di Lorenzo E., Schneider N., Cobb K. M., Chhak, K, Franks P. J. S., Miller A. J., McWilliams J. C., Bograd S. J., Arango H., Curchister E., Powell T. M. and P. Rivere, 2008: North Pacific Gyre Oscillation links ocean climate and ecosystem change. Geophys. Res. Lett., 35, L08607, doi:10.1029/2007GL032838.
 
