@@ -292,7 +292,8 @@ nat_plot <- ggplot(nat.vals %>% filter(age != 'all'),
   scale_color_manual(values = c('black', 'grey65')) +
   scale_x_continuous(breaks = c(seq(5, 19, by = 2)), labels = c(seq(2004, 2018, by = 2)))
 
-#### time-varying predictions: use full model, chose entire non-breeding season covariates #####
+#### time-varying predictions: 
+# use full model, chose entire non-breeding season covariates #####
 # east_out <- readRDS(here::here('results', paste0('out_full_east_NB.rds')))
 # 
 # all_pars <- colnames(east_out$samples$chain1)
@@ -330,23 +331,40 @@ phi_t_vals <- tvary %>%
   transform(variable = gsub('phi', '', variable)) %>%
   transform(sex = ifelse(grepl('M', variable), 'Male', 'Female')) %>%
   transform(variable = sub('M', '', variable)) %>%
-  transform(variable = factor(variable, levels = c('P', '1', '2', '3', '4', '5', 'B', 'NB'),
-                              labels = c('Pup', '1', '2', '3', '4', '5', 'Breeder', 'Non-Breeder'))) 
+  transform(variable = ifelse(variable == 'B' & sex == 'Male', 'NB', variable)) %>%
+transform(variable = factor(variable, levels = c('P', '1', '2', '3', '4', '5', 'B', 'NB'),
+                              labels = c('Pup', '1', '2', '3', '4', '5', 'Breeding adult', 
+                                         'Non-breeding adult'))) 
 
+#dots and CIs
 phi_t_plot <- ggplot(phi_t_vals, aes(year, med, color = variable, group = variable)) +
-  geom_ribbon(aes(ymin=lower, ymax=upper, fill = variable), show.legend = F,
-              alpha=0.1, col = NA) +
-  geom_line(size = 0.8) +
+  geom_errorbar(aes(x = year, ymin=lower, ymax=upper), show.legend = F, width = 0.5) +
+  geom_point(size = 0.8) + geom_line(size = 0.7) +
   xlab('') + ylab(expression(paste('Predicted survival probability ',  '(', phi, ')'))) +
   ggtitle('') +
-  facet_wrap(~sex) +
-  plot_theme(legend.position = 'top', panel.border = element_rect(fill = NA),
+  facet_grid(sex~variable) +
+  plot_theme(legend.position = 'none', panel.border = element_rect(fill = NA),
              plot.title = element_text(hjust = 0.5)) +
   guides(color = guide_legend("", nrow = 1, byrow = T)) +
   scale_color_manual(values = rainbow2) +
-  scale_fill_manual(values = rainbow2) +
   scale_x_continuous(breaks = c(seq(1, 19, by = 2)), labels = c(seq(2000, 2018, by = 2)))
 
+#ribbons and lines
+# phi_t_plot <- ggplot(phi_t_vals, aes(year, med, color = variable, group = variable)) +
+#   geom_ribbon(aes(ymin=lower, ymax=upper, fill = variable), show.legend = F,
+#               alpha=0.1, col = NA) +
+#   geom_line(size = 0.8) +
+#   xlab('') + ylab(expression(paste('Predicted survival probability ',  '(', phi, ')'))) +
+#   ggtitle('') +
+#   facet_wrap(~sex) +
+#   plot_theme(legend.position = 'top', panel.border = element_rect(fill = NA),
+#              plot.title = element_text(hjust = 0.5)) +
+#   guides(color = guide_legend("", nrow = 1, byrow = T)) +
+#   scale_color_manual(values = rainbow2) +
+#   scale_fill_manual(values = rainbow2) +
+#   scale_x_continuous(breaks = c(seq(1, 19, by = 2)), labels = c(seq(2000, 2018, by = 2)))
+
+#breeding probabilities
 psi_t_vals <- tvary %>%
   transform(group = ifelse(grepl('psi', variable), 'Breeding', 'Survival')) %>%
   filter(!is.na(med) & med>0 & group != 'Survival') %>%
@@ -359,19 +377,18 @@ psi_t_vals <- tvary %>%
   transform(variable = sub('.prob', '', variable)) %>%
   transform(variable = gsub('psi', '', variable)) %>%
   transform(variable = factor(variable, levels = c('3', '4', '5', 'B', 'NB'),
-                              labels = c('4', '5', '6', 'Breeder', 'Non-Breeder')))
+                              labels = c('4', '5', '6', 'B | B', 'B | NB')))
 
 psi_t_plot <- ggplot(psi_t_vals, aes(year, med, color = variable, group = variable)) +
-  geom_ribbon(aes(ymin=lower, ymax=upper, fill = variable), show.legend = F,
-              alpha=0.1, col = NA) +
-  geom_line(size = 0.8) +
+  geom_errorbar(aes(x = year, ymin=lower, ymax=upper), width = 0.5, show.legend = F) +
+  geom_point(size = 0.8) + geom_line(size = 0.7) +
   xlab('') + ylab(expression(paste('Predicted breeding probability ',  '(', psi, ')'))) +
   ggtitle('') +
-  plot_theme(legend.position = 'top', panel.border = element_rect(fill = NA),
+  facet_grid(~variable) +
+  plot_theme(legend.position = 'none', panel.border = element_rect(fill = NA),
              plot.title = element_text(hjust = 0.5)) +
   guides(color = guide_legend("", nrow = 1, byrow = T)) +
   scale_color_manual(values = rainbow2[c(4,5,6,7,8)]) +
-  scale_fill_manual(values = rainbow2[c(4,5,6,7,8)]) +
   scale_x_continuous(breaks = c(seq(1, 19, by = 2)), labels = c(seq(2000, 2018, by = 2)))
 
 pups <- phi_t_vals %>% filter(variable == 'Pup')
@@ -411,9 +428,15 @@ p_t_plot <- ggplot(p_t_vals,
              plot.title = element_text(size = 55)) +
   scale_x_continuous(breaks = c(seq(0, 18, by = 2)), labels = c(seq(2000, 2018, by = 2)))
 
-time_vary_plot <- plot_grid(phi_t_plot, plot_grid(psi_t_plot, p_t_plot, labels = c('(b)', '(c)'), 
-                                             label_size = 10, rel_heights = c(1,1)), 
-                            labels = c('(a)', ''), label_size = 10, nrow = 2)
+#old ribbons and detection
+# time_vary_plot <- plot_grid(phi_t_plot, plot_grid(psi_t_plot, p_t_plot, labels = c('(b)', '(c)'), 
+#                                              label_size = 10, rel_heights = c(1,1)), 
+#                             labels = c('(a)', ''), label_size = 10, nrow = 2)
+
+#new error bars and points; no detection
+time_vary_plot <- plot_grid(phi_t_plot, psi_t_plot, labels = c('(a)', '(b)'),
+                            rel_heights = c(2,1), rel_widths = c(1.4,0.5),
+                            label_size = 10, nrow = 2)
 
 ####### covariate data -- run once ##########
 
@@ -542,9 +565,15 @@ env_dat_e <- cov_dat %>% filter(Region == 'east' & !grepl('mass', variable)) %>%
   transform(age = factor(age, levels = c('P', '1-2', 'First time', 'Repeat'),
                          labels = c('Pup survival', 'Young survival',
                                     'First breeding', 'Repeat breeding'))) %>%
-  transform(var_name = ifelse(grepl('chla', variable), 'chla', ifelse(grepl('AOI', variable), 'AOI',
-                                                                      ifelse(grepl('albsa', variable), 'AL', ifelse(grepl('npgo', variable), 'NPGO',
-                                                                                                                    ifelse(grepl('up', variable), 'Upwelling', 'Wind')))))) 
+  transform(var_name = ifelse(grepl('chla', variable), 'Chlorophyll', 
+                              ifelse(grepl('AOI', variable), 'Arctic Oscillation Index',
+                                     ifelse(grepl('albsa', variable), 'Aleutian low', 
+                                            ifelse(grepl('npgo', variable), 'North Pacific Gyre Oscillation',
+                                                   ifelse(grepl('up', variable), 'Upwelling', 'Northward wind')))))) %>%
+  transform(var_name = factor(var_name, levels = c('Aleutian low', 'Arctic Oscillation Index', 'North Pacific Gyre Oscillation',
+                                                   'Chlorophyll', 'Northward wind', 'Upwelling'),
+                              labels = c('Aleutian low', 'Arctic Oscillation Index', 'North Pacific Gyre Oscillation',
+                                         'Chlorophyll', 'Northward wind', 'Upwelling')))
 
 env_east_plot <- ggplot(env_dat_e, aes(x = age, y = med), col = Season, group = Season) +
   geom_linerange(aes(ymin = lower, ymax = upper, col = Season, group = Season),
@@ -567,8 +596,12 @@ env_dat_w <- cov_dat %>% filter(Region == 'west' & !grepl('mass', variable)) %>%
   transform(age = factor(age, levels = c('P', '1-2', 'First time', 'Repeat'),
                          labels = c('Pup survival', 'Young survival',
                                     'First breeding', 'Repeat breeding'))) %>%
-  transform(var_name = ifelse(grepl('AOI', variable), 'AOI', ifelse(grepl('npgo', variable), 'NPGO',
-                                                                    ifelse(grepl('up', variable), 'Upwelling', 'Wind')))) 
+  transform(var_name = ifelse(grepl('AOI', variable), 'AOI', 
+                              ifelse(grepl('npgo', variable), 'NPGO',
+                                      ifelse(grepl('up', variable), 'Upwelling', 'Wind')))) %>%
+  transform(var_name = factor(var_name, levels = c('AOI', 'NPGO', 'Wind', 'Upwelling'),
+                              labels = c('Arctic Oscillation Index', 'North Pacific Gyre Oscillation', 
+                                         'Northward wind', 'Upwelling')))
 
 env_west_plot <- ggplot(env_dat_w, aes(age, med), col = Season, group = Season) +
   geom_linerange(aes(ymin = lower, ymax = upper, col = Season, group = Season), 

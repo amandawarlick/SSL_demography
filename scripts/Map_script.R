@@ -210,6 +210,7 @@ cov_ref_new <- cov_ref %>%
   transform(PopTrend = ifelse(Region %in% c('W. Aleu', 'C. Aleu'), 
                               'Decreasing', 'Stable/Increasing'))
 
+#final paper map
 pdf(here("SSL_CJS", "figures", "map.pdf"), width = 7, height = 5)
 ggplot() +
   geom_polygon(data = ak, aes(x = long, y = lat, group = group), fill = "grey93", color = "grey20", size = 0.3) +
