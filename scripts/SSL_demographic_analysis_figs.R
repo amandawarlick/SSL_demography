@@ -156,6 +156,12 @@ p.vals.w <- mean.dem %>%
                          ifelse(age == 'BM', 'A', sub('M', '', age)))) %>%
   transform(Region = 'Western')
 
+##combine and write csv for IPM
+# dem.rates <- bind_rows(psi.vals.w, phi.vals.w, psi.vals.e, phi.vals.e)
+# write.csv(dem.rates, file = paste('/Users', 'awarlick', 'Documents', 'SAFS', 
+#                                    'SSL_IPM', 'data', 'ProcData', 'dem.rates.csv', sep = '/'),
+#           row.names = F)
+
 ## natality -- west
 nat <- post_sum_w[grepl('nat', row.names(post_sum_w)),]
 
