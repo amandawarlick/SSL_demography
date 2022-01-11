@@ -19,7 +19,7 @@ library(Hmisc) #v4.5-0; %nin%
 ```{r create CH}
 
 #initial branding data (site, weight, sex, etc) for w.DPS
-inits_raw <- read.csv(here::here('data', "initial_capture_data_02012021.csv"), 
+inits_raw <- read.csv(here::here('data', "initial_capture_data_011022.csv"), 
                   header = T, stringsAsFactors = F)
 
 inits <- inits_raw %>%
@@ -38,7 +38,7 @@ inits_m <- inits %>% filter(Sex == 'M')
 
 #FEMALES
 #This contains multiple entries per animal per day. Sometimes pup_ev or Behavior is different, not always. 
-res_raw <- read.csv(here::here('data', 'resight_data_02012021.csv'), 
+res_raw <- read.csv(here::here('data', 'resight_data_011022.csv'), 
                      header = T, stringsAsFactors = F) 
 
 resights <- res_raw %>%

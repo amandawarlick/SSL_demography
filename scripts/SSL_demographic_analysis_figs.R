@@ -46,7 +46,8 @@ colnames(brands_table) <- gsub('X', '', colnames(brands_table))
 #### posteriors and posterior summaries: null model ####
 
 #west
-west_out <- readRDS(here::here('results', paste0('out_null_west.rds')))
+# west_out <- readRDS(here::here('results', paste0('out_null_west.rds')))
+west_out <- readRDS(here::here('results', paste0('out_null_west2018dat.rds')))
 all_pars <- colnames(west_out$samples$chain1)
 noZ <- all_pars[which(!grepl('z', all_pars))]
 
