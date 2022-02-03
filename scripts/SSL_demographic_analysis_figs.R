@@ -653,20 +653,20 @@ waic_tab <- waic_vals %>% filter(Region == 'east') %>%
 
 
 ##### supplemental info: singles variables #######
-# season <- c('NB', 'spr', 'sum', 'fall', 'win')
-# vars <- c('npgo', 'up', 'albsa', 'chla', 'AOI', 'vwnd', 'scal', 'MEI', 'PDO', 'prod', 'curl',
-#           'sst', 'NOI', 'NPI', 'uwnd')
+season <- c('NB', 'spr', 'sum', 'fall', 'win')
+vars <- c('npgo', 'up', 'albsa', 'chla', 'AOI', 'vwnd', 'scal', 'MEI', 'PDO', 'prod', 'curl',
+          'sst', 'NOI', 'NPI', 'uwnd')
 # 
 # waic_vals_east <- data.frame()
 # for (r in c('east')) {
-#   null <- readRDS(file = here::here('results',paste0('out_null_east.rds')))$WAIC
+#   null <- readRDS(file = here::here('results',paste0('out_null_east.rds')))$WAIC$WAIC
 #   RE <- readRDS(file = here::here('SSL_CJS', 'Output', 'Current', 'Final',
-#                                   paste0('out_RE_WAIC.rds')))$WAIC
+#                                   paste0('out_RE_WAIC.rds')))$WAIC$WAIC
 #                                   
 #   for (v in vars) {
 #     for (s in season) {
 # 
-#       env <- readRDS(file = here::here('results', 'SI', paste0('out_full_east_', s, '_',  v, '.rds')))$WAIC
+#       env <- readRDS(file = here::here('results', 'SI', paste0('out_full_east_', s, '_',  v, '.rds')))$WAIC$WAIC
 # 
 #       vals <- data.frame(Region = r, Season = s, Var = v, WAIC = env, RE = RE, null = null)
 # 
@@ -677,23 +677,23 @@ waic_tab <- waic_vals %>% filter(Region == 'east') %>%
 # 
 # waic_vals_west <- data.frame()
 # for (r in c('west')) {
-#   null <- readRDS(file = here::here('results', paste0('out_null_west.rds')))$WAIC
+#   null <- readRDS(file = here::here('results', paste0('out_null_west2018dat.rds')))$WAIC$WAIC
 #   RE <- NA
-#   
+# 
 #   for (v in vars) {
 #     for (s in season) {
-#       
-#       env <- readRDS(file = here::here('results', 'SI', paste0('out_env_west_', s, '_',  v, '.rds')))$WAIC
-#       
+# 
+#       env <- readRDS(file = here::here('results', 'SI', paste0('out_env_west_', s, '_',  v, '.rds')))$WAIC$WAIC
+# 
 #       vals <- data.frame(Region = r, Season = s, Var = v, WAIC = env, RE = RE, null = null)
-#       
+# 
 #       waic_vals_west <- bind_rows(vals, waic_vals_west)
 #     }
 #   }
 # }
 # 
-# waic_vals <- bind_rows(waic_vals_east, waic_vals_west) 
-# 
+# waic_vals <- bind_rows(waic_vals_east, waic_vals_west)
+
 # write.csv(waic_vals, here::here('results', 'SI',
 #                                 'waic_vals_singles.csv'), row.names = F)
 
