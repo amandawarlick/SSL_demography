@@ -1954,6 +1954,8 @@ z.init.m[which(z.st.m == 7)] <- NA #need to get the between-breeder observations
 #fall: PDO/NOI, PDO/MEI, NOI/MEI, ssh/NPI, temp/so
 #winter: PDO/MEI, PDO/NOI, MEI/NPI, vwnd/albsa, albsa/MEI, prod/scalar
 
+##11/1 replaced chla for wind on udrive then had merge conflicts
+
 # Specify model
 SSL_CJS <- nimbleCode({
   

@@ -53,7 +53,9 @@ prob_vals_env <- prob_vals_env
 ```
 
 
-**The Effects of Ocean Conditions on Survival and Natality in the Western Distinct Population Segment of Steller Sea Lions**
+<!-- **The Effects of Ocean Conditions on Survival and Natality in the Western Distinct Population Segment of Steller Sea Lions** -->
+
+**Identifying environmental drivers of demography and factors limiting the recovery of an endangered marine top predator**
 
 Amanda J. Warlick,$^1$ Devin S. Johnson,$^2$ Tom S. Gelatt,$^3$ Sarah J. Converse$^4$  
 
@@ -120,11 +122,11 @@ Interannual variability in survival and pupping probabilities for individuals ma
 \text{logit}(\gamma_\text{a,s,t}) = \mu_\text{a,s}^{\gamma} + \boldsymbol{x\prime} \boldsymbol{\beta}_\text{a}^{\gamma} + \epsilon_\text{a,t}^{\gamma} (\#eq:gamma)
 \end{equation}
 
-where $\mu_\text{s,a}^{\gamma}$ is an age (*a*) and sex (*s*)-specific intercept, $\boldsymbol{x}$ is a vector of covariates with associated coefficients $\boldsymbol{\beta}_\text{a}^{\gamma}$, and $\epsilon_\text{a,t}^{\gamma}$ is an annual (*t*) random effect (Eq. \@ref(eq:gamma)). The intercept $\mu_\text{a,s}^{\gamma}$ for a given demographic rate was estimated using a logit-transformed uniform U(0,1) prior distribution on the probability scale for individuals marked in the eastern portion of the wDPS range. For individuals marked in the western portion of the range where samples sizes were smaller, mean survival rates for each sex were estimated using a multivariate normal prior distribution that included autocorrelation by age, 
+where $\mu_\text{s,a}^{\gamma}$ is an age (*a*) and sex (*s*)-specific intercept, $\boldsymbol{x}$ is a vector of covariates with associated coefficients $\boldsymbol{\beta}_\text{a}^{\gamma}$, and $\epsilon_\text{a,t}^{\gamma}$ is an annual (*t*) random effect (Eq. \@ref(eq:gamma)). The intercept $\mu_\text{a,s}^{\gamma}$ for a given demographic rate was estimated using a logit-transformed uniform U(0,1) prior distribution on the probability scale for individuals marked in the eastern portion of the wDPS range. For individuals marked in the western portion of the range where samples sizes were smaller, mean survival rates for each sex were estimated using an intrinsic Gaussian conditional autoregressive (CAR) model prior distribution that enforced autocorrelation by age, 
 
-$$\mu_\text{P:5,s}^{\phi} \sim \text{MVN}(0, \sigma \textbf{Q}^{-1})$$
+$$\mu_\text{P:5,s}^{\phi} \sim \text{CAR}(0, \sigma \textbf{Q}^{-1})$$
 
-where $\textbf{Q}$ is an intrinsic autoregression or order 2 (IAR(2); Speckman and Sun 2003) scaled by $\sigma$ and MVN represents a multivariate normal distribution (Eqs. \@ref(eq:gammaWestMVNprior)). The IAR(2) model imposes a smoothness constraint that estimates two fewer parameters relative to *independent* age random effects. As with the previous penalized complexity priors, we used  $\sigma \sim \text{Exp}(\lambda = 1)$ as a prior for the scaling parameter $\sigma$. 
+where $\textbf{Q}$ is an intrinsic autoregression or order 2 (IAR(2); Speckman and Sun 2003) scaled by $\sigma$ (Eqs. \@ref(eq:gammaWestMVNprior)). The IAR(2) model imposes a smoothness constraint that estimates two fewer parameters relative to *independent* age random effects. As with the previous penalized complexity priors, we used  $\sigma \sim \text{Exp}(\lambda = 1)$ as a prior for the scaling parameter $\sigma$. 
 
 To increase parameter estimability and regulate model complexity, we applied penalized complexity approach (Simpson et al. 2017, van Erp et al. 2019) for defining prior distributions on $\boldsymbol{\beta}_\text{a}^{\gamma}$ and $\epsilon_\text{a,t}^{\gamma}$. Using a penalized complexity prior shrinks the coefficient toward zero in the absence of strong support for a covariate effect. The effect of each univariate covariate *c* (e.g., pup mass $x_\text{i}$ and oceanographic variable $x_\text{t}$) on demographic rate $\gamma_\text{a,s}$ was assumed to be drawn from a unique Gaussian distribution as $\beta_\text{a,c}^{\gamma} \sim \text{N}(0, \sigma_{a,c})$, with standard deviations distributed according to an exponential distribution with a fixed shrinkage rate $\sigma_{a,c} \sim \text{Exp}(\lambda = 1)$ to apply moderately strong shrinkage. Similarly, random year effects (estimated only for the eastern portion of the wDPS range) were assumed to be drawn from a Gaussian distribution as $\epsilon_{\text{a,t}}^{\gamma} \sim \text{N}(0, \sigma_{\text{a}}^{\gamma})$, with standard deviations $\sigma_{\text{a}}^{\gamma}$ distributed according to an exponential distribution with a fixed shrinkage rate as described above. Age- and sex-specific intercepts were estimated for each demographic rate, but fixed effects of environmental conditions were shared across sexes and only estimated for pup survival ($\phi_\text{P}$), age 1-2 survival ("young", $\phi_\text{1:2}$), and first-time ($\psi_\text{3:5}$) and repeat ($\psi_\text{B}$) pupping, as we hypothesized that the survival of older individuals was likely to be relatively unaffected by environmental variability due to much larger energy storage capacity and foraging experience. Separate fixed effects were examined for the effect of pup mass for each sex. For survival, correlated random effects were assumed between sexes (except females with pups and adult males) and were also assumed for juvenile individuals ages 3-5 (i.e., year-specific deviations from the mean were modeled in common for these groups). For pupping probabilities, correlated random effects were assumed for all first-time breeding transitions for age 3-5 individuals ($\psi_\text{3:5}$).
 
@@ -299,7 +301,7 @@ env_west_plot
 `r figs("env_west_plot", caption = "Logit-scale posterior mean and 95% credible intervals for the fixed effects of season-specific environmental covariates on pup and age 1-2 survival for individuals marked in the western portion of the wDPS range.")`
 
 
-`r tbls("pars_tab", caption = "Posterior mean and 95% credible intervals for age- and sex-specific (M = male; F = female) survival (phi edit) and natality (f) parameters.")`
+`r tbls("pars_tab", caption = "Posterior mean and 95% credible intervals for age- and sex-specific (M = male; F = female) survival and natality (proportion of females with a pup) parameters.")`
 ```{r pars table}
 
 kable(pars_tab, align = 'c', format.args = list(big.mark = ","))
