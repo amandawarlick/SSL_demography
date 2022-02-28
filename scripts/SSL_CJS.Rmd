@@ -1946,642 +1946,6 @@ z.init.m[which(z.st.m == 7)] <- NA #need to get the between-breeder observations
 
 ```
 
-```{r null waleu smooth age}
-
-SSL_CJS <- nimbleCode({
-  
-# Priors and constraints
-for (i in 1:n_fem) { #females
-        for (t in 1:(n_occasions - 1)) {
-            logit(phiP[i,t]) <- mu.phi[1]
-            logit(phi1[i,t]) <- mu.phi[2]
-            logit(phi2[i,t]) <- mu.phi[3]
-            logit(phi3[i,t]) <- mu.phi[4]
-            logit(phi4[i,t]) <- mu.phi[5]
-            logit(phi5[i,t]) <- mu.phi[6]
-            logit(phiB[i,t]) <- mu.A
-            logit(phiNB[i,t]) <- mu.A
-            logit(delB[i,t]) <- b.delB[resights[i,t]]
-            logit(p1[i,t]) <- mean.p1 #+ b.eff[eff[t]]
-            logit(p2[i,t]) <- mean.p2 #+ b.eff[eff[t]]
-            logit(p3[i,t]) <- mean.p3 #+ b.eff[eff[t]]
-            logit(p4[i,t]) <- mean.p4 #+ b.eff[eff[t]]
-            logit(p5[i,t]) <- mean.p5 #+ b.eff[eff[t]]
-            logit(pB[i,t]) <- mean.pA #+ b.eff[eff[t]]
-            logit(pNB[i,t]) <- mean.pA #+ b.eff[eff[t]]
-            psi3[i,t] <- int.psi3
-            psi4[i,t] <- int.psi4
-            psi5[i,t] <- int.psi5
-            psiB[i,t] <- int.psiB
-            psiNB[i,t] <- int.psiNB
-        }
-}
-  
-   for (t in 4:n_occasions) {
-      nat_all[t] <- sum(z[1:n_fem,t] > 6 & z[1:n_fem,t] < 10)/sum(z[1:n_fem,t]>4 & z[1:n_fem,t]<12)
-      nat4[t] <- sum(z[1:n_fem,t] == 7)/sum(z[1:n_fem,t] == 7 | z[1:n_fem,t] == 5) #4 yo: 7/(5+7)
-      nat5[t] <- sum(z[1:n_fem,t] == 8)/sum(z[1:n_fem,t] == 8 | z[1:n_fem,t] == 6 | z[1:n_fem,t] == 10)
-      nat6plus[t] <- sum(z[1:n_fem,t] == 9)/sum(z[1:n_fem,t] == 9 | z[1:n_fem,t] == 11) #6+ yo: 9/(9+11)
-   }
-  
-  for (i in 1:n_m) { #males
-        for (t in 1:(n_occasions - 1)) {
-            logit(phiPM[i,t]) <- mu.phiM[1]
-            logit(phi1M[i,t]) <- mu.phiM[2]
-            logit(phi2M[i,t]) <- mu.phiM[3]
-            logit(phi3M[i,t]) <- mu.phiM[4]
-            logit(phi4M[i,t]) <- mu.phiM[5]
-            logit(phi5M[i,t]) <- mu.phiM[6]
-            logit(phiBM[i,t]) <- mu.AM
-            logit(p1M[i,t]) <- mean.p1M #+ b.eff[eff[t]]
-            logit(p2M[i,t]) <- mean.p2M #+ b.eff[eff[t]]
-            logit(p3M[i,t]) <- mean.p3M #+ b.eff[eff[t]]
-            logit(p4M[i,t]) <- mean.p4M #+ b.eff[eff[t]]
-            logit(p5M[i,t]) <- mean.p5M #+ b.eff[eff[t]]
-            logit(pBM[i,t]) <- mean.pAM #+ b.eff[eff[t]]
-        }
-  }
-  
-  ## survival
-  #females
-  mu.phi[1:6] ~ dmnorm(zeros[1:6], P[1:6,1:6])
-
-  for(i in 1:6) zeros[i] <- 0 # or just read this in as data
-  P[1:6,1:6] <- tau.phi*Q[1:6,1:6]
-  tau.phi <- 1/(sigma.phi*sigma.phi)
-  sigma.phi ~ dexp(1) # try different rates here for the exp prior 
-
-  #males
-  mu.phiM[1:6] ~ dmnorm(zeros.m[1:6], P.m[1:6,1:6])
-
-  for(i in 1:6) zeros.m[i] <- 0 
-  P.m[1:6,1:6] <- tau.phiM*Q[1:6,1:6]
-  tau.phiM <- 1/(sigma.phiM*sigma.phiM)
-  sigma.phiM ~ dexp(1)
-   
-    mu.A <- log(int.phiA/(1 - int.phiA))
-    mu.AM <- log(int.phiAM/(1 - int.phiAM))
-    int.phiA ~ dunif(0,1)
-    int.phiAM ~ dunif(0,1)
-  
-  #breeding
-    int.psi3 ~ dunif(0,1)
-    int.psi4 ~ dunif(0,1)
-    int.psi5 ~ dunif(0,1)
-    int.psiB ~ dunif(0,1)
-    int.psiNB ~ dunif(0,1)
-    
-  #detection
-    mean.p1 <- log(int.p1/(1 - int.p1))
-    mean.p2 <- log(int.p2/(1 - int.p2))
-    mean.p3 <- log(int.p3/(1 - int.p3))
-    mean.p4 <- log(int.p4/(1 - int.p4))
-    mean.p5 <- log(int.p5/(1 - int.p5))
-    mean.pA <- log(int.pA/(1 - int.pA))
-    mean.p1M <- log(int.p1M/(1 - int.p1M))
-    mean.p2M <- log(int.p2M/(1 - int.p2M))
-    mean.p3M <- log(int.p3M/(1 - int.p3M))
-    mean.p4M <- log(int.p4M/(1 - int.p4M))
-    mean.p5M <- log(int.p5M/(1 - int.p5M))
-    mean.pAM <- log(int.pAM/(1 - int.pAM))
-    int.p1 ~ dunif(0,1)
-    int.p2 ~ dunif(0,1)
-    int.p3 ~ dunif(0,1)
-    int.p4 ~ dunif(0,1)
-    int.p5 ~ dunif(0,1)
-    int.pA ~ dunif(0,1)
-    int.p1M ~ dunif(0,1)
-    int.p2M ~ dunif(0,1)
-    int.p3M ~ dunif(0,1)
-    int.p4M ~ dunif(0,1)
-    int.p5M ~ dunif(0,1)
-    int.pAM ~ dunif(0,1)
-
-    p.delB[1] ~ dunif(0,1)
-    b.delB[1] <- log(p.delB[1]/(1-p.delB[1]))
-    p.delB[2] ~ dunif(0,1)
-    b.delB[2] <- log(p.delB[2]/(1-p.delB[2]))
-    p.delB[3] ~ dunif(0,1)
-    b.delB[3] <- log(p.delB[3]/(1-p.delB[3]))
-    b.delB[4] <- -2 #0 on probability scale
-
-    #likelihood
-for (i in 1:n_fem) { #females
-    z[i, fc[i]:fc[i]] <- 1 #pups at first capture
-    # z_new[i, fc[i]:fc[i]] <- 1
-
-for (t in (fc[i] + 1):n_occasions) {
-      z[i,t] ~ dcat(state_probs[i,t-1,1:12])
-      y[i,t] ~ dcat(event_probs[i,t,1:11])
-      
-      #predictions
-      # z_new[i,t] ~ dcat(state_probs_new[i,t-1,1:12])
-      # y_new[i,t] ~ dcat(event_probs_new[i,t,1:11])
-      
-      #count yearlings and breeders
-      # yearlings[t] <- sum(z[1:n_fem,t]==2)
-      # yearlingsy[t] <- sum(y[1:n_fem,t]==2)
-      # breeders[t] <- sum(z[1:n_fem,t] > 6 & z[1:n_fem,t] < 10)
-      # breedersy[t] <- sum(y[1:n_fem,t] == 6 | y[1:n_fem,t] == 8 | y[1:n_fem,t] == 10)
-      # 
-      # yearlings_pred[t] <- sum(z_new[1:n_fem,t]==2)
-      # yearlings_predy[t] <- sum(y_new[1:n_fem,t]==2)
-      # breeders_pred[t] <- sum(z_new[1:n_fem,t] > 6 & z[1:n_fem,t] < 10)
-      # breeders_predy[t] <- sum(y_new[1:n_fem,t] == 6 | y_new[1:n_fem,t] == 8 | 
-      #                            y_new[1:n_fem,t] == 10)
-      
-    state_probs[i,t-1,1:12] <- getPHI_f(z = z[i,t-1], 
-                                      phiP = phiP[i,t-1], phi1 = phi1[i,t-1], phi2 = phi2[i,t-1], 
-                                      phi3 = phi3[i,t-1], phi4 = phi4[i,t-1], phi5 = phi5[i,t-1], 
-                                      phiB = phiB[i,t-1], phiNB = phiNB[i,t-1],
-                                      psi3 = psi3[i,t-1], psi4 = psi4[i,t-1],
-                                      psi5 = psi5[i,t-1], psiB = psiB[i,t-1], psiNB = psiNB[i,t-1])
-    
-    event_probs[i,t,1:11] <- getP_f(z = z[i,t], 
-                                    p1 = p1[i,t-1], p2 = p2[i,t-1], p3 = p3[i,t-1], 
-                                    p4 = p4[i,t-1], p5 = p5[i,t-1],
-                                    pB = pB[i,t-1], pNB = pNB[i,t-1], delB = delB[i,t-1])
-    
-    # state_probs_new[i,t-1,1:12] <- getPHI_f(z = z_new[i,t-1], 
-    #                                   phiP = phiP[i,t-1], phi1 = phi1[i,t-1], phi2 = phi2[i,t-1], 
-    #                                   phi3 = phi3[i,t-1], phi4 = phi4[i,t-1], phi5 = phi5[i,t-1], 
-    #                                   phiB = phiB[i,t-1], phiNB = phiNB[i,t-1],
-    #                                   psi3 = psi3[i,t-1], psi4 = psi4[i,t-1],
-    #                                   psi5 = psi5[i,t-1], psiB = psiB[i,t-1], psiNB = psiNB[i,t-1])
-    # 
-    # event_probs_new[i,t,1:11] <- getP_f(z = z_new[i,t], 
-    #                                 p1 = p1[i,t-1], p2 = p2[i,t-1], p3 = p3[i,t-1], 
-    #                                 p4 = p4[i,t-1], p5 = p5[i,t-1],
-    #                                 pB = pB[i,t-1], pNB = pNB[i,t-1], delB = delB[i,t-1])
-    
-    
-    } #t females
-} #i females
-    
-   for (i in 1:n_m) { #males
-    zm[i, fc_m[i]:fc_m[i]] <- 1
-    # zm_new[i, fc_m[i]:fc_m[i]] <- 1
-    
-  for (t in (fc_m[i] + 1):n_occasions) {
-    zm[i,t] ~ dcat(state_probs_m[i, t-1, 1:8])
-    ym[i,t] ~ dcat(event_probs_m[i,t,1:8])
-    
-    # zm_new[i,t] ~ dcat(state_probs_m_new[i,t-1,1:8])
-    # ym_new[i,t] ~ dcat(event_probs_m_new[i,t,1:8])
-    
-      #count yearlings and breeders
-      # yearlingsM[t] <- sum(zm[1:n_m,t]==2)
-      # yearlingsMy[t] <- sum(ym[1:n_m,t]==2)
-      # 
-      # yearlingsM_pred[t] <- sum(zm_new[1:n_m,t]==2)
-      # yearlingsM_predy[t] <- sum(ym_new[1:n_m,t]==2)
-      # 
-      # twosM[t] <- sum(zm[1:n_m,t]==3)
-      # twosMy[t] <- sum(ym[1:n_m,t]==3)
-      # 
-      # twosM_pred[t] <- sum(zm_new[1:n_m,t]==3)
-      # twosM_predy[t] <- sum(ym_new[1:n_m,t]==3)
-    
-      # dev <- -2*logdensity.cat(y[i,t,], z[i,t]p[i,t])
-      # dev_new <- -2*logdensity.cat(y_new[i,t,], z_new[i,t]p[i,t])
-    
-    state_probs_m[i,t-1,1:8] <- getPHI_m(z = zm[i,t-1], 
-                                      phiPM = phiPM[i,t-1], phi1M = phi1M[i,t-1], phi2M = phi2M[i,t-1], 
-                                      phi3M = phi3M[i,t-1], phi4M = phi4M[i,t-1], phi5M = phi5M[i,t-1], 
-                                      phiBM = phiBM[i,t-1])
-    event_probs_m[i,t,1:8] <- getP_m(z = zm[i,t], 
-                                    p1M = p1M[i,t-1], p2M = p2M[i,t-1], p3M = p3M[i,t-1], 
-                                    p4M = p4M[i,t-1], p5M = p5M[i,t-1],
-                                    pBM = pBM[i,t-1])
-    
-    # state_probs_m_new[i,t-1,1:8] <- getPHI_m(z = zm_new[i,t-1], 
-    #                                   phiPM = phiPM[i,t-1], phi1M = phi1M[i,t-1], phi2M = phi2M[i,t-1], 
-    #                                   phi3M = phi3M[i,t-1], phi4M = phi4M[i,t-1], phi5M = phi5M[i,t-1], 
-    #                                   phiBM = phiBM[i,t-1])
-    # event_probs_m_new[i,t,1:8] <- getP_m(z = zm_new[i,t], 
-    #                                 p1M = p1M[i,t-1], p2M = p2M[i,t-1], p3M = p3M[i,t-1], 
-    #                                 p4M = p4M[i,t-1], p5M = p5M[i,t-1],
-    #                                 pBM = pBM[i,t-1])
-    } #t
-   } #i
-    
-}) # mod   
-
- 
-#data
-nim.data <- list(y = y, ym = ym, 
-                Q = matrix(c(1,-2,1,0,0,0,
-                             -2,5,-4,1,0,0,
-                             1,-4,6,-4,1,0,
-                             0,1,-4,6,-4,1,
-                             0,0,1,-4,5,-2,
-                             0,0,0,1,-2,1), ncol = 6, nrow = 6, byrow = T),
-                 z = z.st, zm = z.st.m)
-
-nim.constants <- list(n_fem = dim(ch_fem)[1], n_m = dim(ch_m)[1], n_occasions = n_occasions,
-                      resights = res_mat, 
-                      # eff = eff,
-                      fc = fc, fc_m = fc_m)
-
-inits <- list(int.phiA = 0.9, int.phiAM = 0.9,
-              int.psi3 = 0.05, int.psi4 = 0.3, int.psi5 = 0.15, 
-              int.psiB = 0.9, int.psiNB = 0.20,
-              mean.pAM = 0.8, mean.p5M = 0.6,
-              # mu.phi = rep(qlogis(0.9),6), mu.phiM = rep(qlogis(0.9),6),
-  z = z.init, zm = z.init.m)
-
-### parameters
-params <- c('int.p1', 'int.p2', 'int.p3', 'int.p4', 'int.p5', 'int.pA', 
-            'int.p1M', 'int.p2M', 'int.p3M', 'int.p4M', 'int.p5M', 'int.pAM', 
-            "int.psi3", 'int.psi4', 'int.psi5', 'int.psiB', 'int.psiNB', 
-            'nat_all', 'nat4', 'nat5', 'nat6plus', 'int.phiA', 'int.phiAM', 
-            # 'yearlings', 'yearlings_pred',  'yearlingsy', 'yearlings_predy',
-            # 'breeders', 'breeders_pred', 'breedersy', 'breeders_predy',
-            # 'yearlingsM', 'yearlingsMy', 'yearlingsM_pred', 'yearlingsM_predy',
-            # 'twosM', 'twosMy', 'twosM_predy', 'twosM_pred',
-            'b.delB', 'p.delB', #'b.delBM', 'p.delBM', 
-            'mu.phi', 'mu.phiM', 'tau.phiM',  'sigma.phiM', 'tau.phi',  'sigma.phi',
-            'z', 'zm', #'y_new', 'ym_new', #monitor z for WAIC, y and y_new for bayesian p
-            'mu.A', 'mu.AM')
-
-### run model
-# n.iter = 700; n.chains = 3; n.burnin = 100; nthin = 1; nAdapt = 10
-# n.iter = 15000; n.chains = 3; n.burnin = 8000; nthin = 1; nAdapt = 10
-n.iter = 10000; n.chains = 3; n.burnin = 5000; nthin = 1; nAdapt = 10
-
-start <- Sys.time()
-
-Rmodel <- nimbleModel(code = SSL_CJS, 
-                      constants = nim.constants, data = nim.data, 
-                      calculate = F, check = F, inits = inits)
-
-# Rmodel$y #returns data
-# Rmodel$simulate('z[1, 4]')
-# Rmodel$calculate('mean.p1')
-
-# Rmodel$calculate(c('y', 'y_new'))
-# Rmodel$simulate(c('y'))
-# Rmodel$y
-# 
-# Rmodel$logProb_y
-# Rmodel$logProb_y_new
-
-conf <- configureMCMC(Rmodel, monitors = params, control = list(adaptInterval = nAdapt), 
-                      thin = nthin, useConjugacy = FALSE, enableWAIC = TRUE)
-
-# CV_out <- runCrossValidate(conf, 4, MCMCcontrol = list(niter = n.iter, nburnin = n.burnin))
-
-Rmcmc <- buildMCMC(conf)  #produce uncompiled R mcmc function
-# Rmcmc <- buildMCMC(conf)
-Cmodel <- compileNimble(Rmodel)
-Cmcmc <- compileNimble(Rmcmc, project = Rmodel)
-
-# st2<-Sys.time()
-out <- runMCMC(Cmcmc, niter = n.iter, nburnin = n.burnin, nchains = n.chains, inits = inits,
-                 setSeed = FALSE, progressBar = TRUE,
-               WAIC = TRUE,
-               samplesAsCodaMCMC = TRUE)
-
-# elapsed <- Sys.time()-start
-
-# saveRDS(out, here::here('results', 'out_null_west.rds'))
-
-#diagnostics
-
-all_pars <- colnames(out$samples$chain1)
-noZ <- all_pars[which(!grepl('z', all_pars))]
-rhats <- gelman.diag(out$samples[,noZ], multivariate=F, autoburnin=F)
-# traceplot(out$samples[,noZ[1:37]])
-
-# traceplot(out$samples[,grepl('psi', noZ)])
-traceplot(out$samples[,'int.phiPM'])
- 
-# max_rhat <- max(rhats$psrf[,1], na.rm = T)
-
-# effectiveSize(out[,params])
-
-```
-
-```{r null waleu indep age}
-
-SSL_CJS <- nimbleCode({
-  
-# Priors and constraints
-for (i in 1:n_fem) { #females
-        for (t in 1:(n_occasions - 1)) {
-            logit(phiP[i,t]) <- mu.phiP
-            logit(phi1[i,t]) <- mu.phi1
-            logit(phi2[i,t]) <- mu.phi2
-            logit(phi3[i,t]) <- mu.phi3
-            logit(phi4[i,t]) <- mu.phi4
-            logit(phi5[i,t]) <- mu.phi5
-            logit(phiB[i,t]) <- mu.A
-            logit(phiNB[i,t]) <- mu.A
-            logit(delB[i,t]) <- b.delB[resights[i,t]]
-            logit(p1[i,t]) <- mean.p1 #+ b.eff[eff[t]]
-            logit(p2[i,t]) <- mean.p2 #+ b.eff[eff[t]]
-            logit(p3[i,t]) <- mean.p3 #+ b.eff[eff[t]]
-            logit(p4[i,t]) <- mean.p4 #+ b.eff[eff[t]]
-            logit(p5[i,t]) <- mean.p5 #+ b.eff[eff[t]]
-            logit(pB[i,t]) <- mean.pA #+ b.eff[eff[t]]
-            logit(pNB[i,t]) <- mean.pA #+ b.eff[eff[t]]
-            psi3[i,t] <- int.psi3
-            psi4[i,t] <- int.psi4
-            psi5[i,t] <- int.psi5
-            psiB[i,t] <- int.psiB
-            psiNB[i,t] <- int.psiNB
-        }
-}
-  
-   for (t in 4:n_occasions) {
-      nat_all[t] <- sum(z[1:n_fem,t] > 6 & z[1:n_fem,t] < 10)/sum(z[1:n_fem,t]>4 & z[1:n_fem,t]<12)
-      nat4[t] <- sum(z[1:n_fem,t] == 7)/sum(z[1:n_fem,t] == 7 | z[1:n_fem,t] == 5) #4 yo: 7/(5+7)
-      nat5[t] <- sum(z[1:n_fem,t] == 8)/sum(z[1:n_fem,t] == 8 | z[1:n_fem,t] == 6 | z[1:n_fem,t] == 10)
-      nat6plus[t] <- sum(z[1:n_fem,t] == 9)/sum(z[1:n_fem,t] == 9 | z[1:n_fem,t] == 11) #6+ yo: 9/(9+11)
-   }
-  
-  for (i in 1:n_m) { #males
-        for (t in 1:(n_occasions - 1)) {
-            logit(phiPM[i,t]) <- mu.phiPM
-            logit(phi1M[i,t]) <- mu.phi1M
-            logit(phi2M[i,t]) <- mu.phi2M
-            logit(phi3M[i,t]) <- mu.phi3M
-            logit(phi4M[i,t]) <- mu.phi4M
-            logit(phi5M[i,t]) <- mu.phi5M
-            logit(phiBM[i,t]) <- mu.AM
-            logit(p1M[i,t]) <- mean.p1M #+ b.eff[eff[t]]
-            logit(p2M[i,t]) <- mean.p2M #+ b.eff[eff[t]]
-            logit(p3M[i,t]) <- mean.p3M #+ b.eff[eff[t]]
-            logit(p4M[i,t]) <- mean.p4M #+ b.eff[eff[t]]
-            logit(p5M[i,t]) <- mean.p5M #+ b.eff[eff[t]]
-            logit(pBM[i,t]) <- mean.pAM #+ b.eff[eff[t]]
-        }
-  }
-  
-  ## survival
-  #females
-  # mu.phi[1:6] ~ dmnorm(zeros[1:6], P[1:6,1:6])
-  # 
-  # for(i in 1:6) zeros[i] <- 0 # or just read this in as data
-  # P[1:6,1:6] <- tau.phi*Q[1:6,1:6]
-  # tau.phi <- 1/(sigma.phi*sigma.phi)
-  # sigma.phi ~ dexp(1) # try different rates here for the exp prior 
-  
-  #males
-  # mu.phiM[1:6] ~ dmnorm(zeros.m[1:6], P.m[1:6,1:6])
-  # 
-  # for(i in 1:6) zeros.m[i] <- 0 
-  # P.m[1:6,1:6] <- tau.phiM*Q[1:6,1:6]
-  # tau.phiM <- 1/(sigma.phiM*sigma.phiM)
-  # sigma.phiM ~ dexp(1)
-  
-    mu.phiP <- log(int.phiP/(1 - int.phiP))
-    mu.phi1 <- log(int.phi1/(1 - int.phi1))
-    mu.phi2 <- log(int.phi2/(1 - int.phi2))
-    mu.phi3 <- log(int.phi3/(1 - int.phi3))
-    mu.phi4 <- log(int.phi4/(1 - int.phi4))
-    mu.phi5 <- log(int.phi5/(1 - int.phi5))
-    int.phiP ~ dunif(0,1)
-    int.phi1 ~ dunif(0,1)
-    int.phi2 ~ dunif(0,1)
-    int.phi3 ~ dunif(0,1)
-    int.phi4 ~ dunif(0,1)
-    int.phi5 ~ dunif(0,1)
-
-    mu.phiPM <- log(int.phiPM/(1 - int.phiPM))
-    mu.phi1M <- log(int.phi1M/(1 - int.phi1M))
-    mu.phi2M <- log(int.phi2M/(1 - int.phi2M))
-    mu.phi3M <- log(int.phi3M/(1 - int.phi3M))
-    mu.phi4M <- log(int.phi4M/(1 - int.phi4M))
-    mu.phi5M <- log(int.phi5M/(1 - int.phi5M))
-    int.phiPM ~ dunif(0,1)
-    int.phi1M ~ dunif(0,1)
-    int.phi2M ~ dunif(0,1)
-    int.phi3M ~ dunif(0,1)
-    int.phi4M ~ dunif(0,1)
-    int.phi5M ~ dunif(0,1)
-   
-    mu.A <- log(int.phiA/(1 - int.phiA))
-    mu.AM <- log(int.phiAM/(1 - int.phiAM))
-    int.phiA ~ dunif(0,1)
-    int.phiAM ~ dunif(0,1)
-  
-  #breeding
-    int.psi3 ~ dunif(0,1)
-    int.psi4 ~ dunif(0,1)
-    int.psi5 ~ dunif(0,1)
-    int.psiB ~ dunif(0,1)
-    int.psiNB ~ dunif(0,1)
-    
-  #detection
-    mean.p1 <- log(int.p1/(1 - int.p1))
-    mean.p2 <- log(int.p2/(1 - int.p2))
-    mean.p3 <- log(int.p3/(1 - int.p3))
-    mean.p4 <- log(int.p4/(1 - int.p4))
-    mean.p5 <- log(int.p5/(1 - int.p5))
-    mean.pA <- log(int.pA/(1 - int.pA))
-    mean.p1M <- log(int.p1M/(1 - int.p1M))
-    mean.p2M <- log(int.p2M/(1 - int.p2M))
-    mean.p3M <- log(int.p3M/(1 - int.p3M))
-    mean.p4M <- log(int.p4M/(1 - int.p4M))
-    mean.p5M <- log(int.p5M/(1 - int.p5M))
-    mean.pAM <- log(int.pAM/(1 - int.pAM))
-    int.p1 ~ dunif(0,1)
-    int.p2 ~ dunif(0,1)
-    int.p3 ~ dunif(0,1)
-    int.p4 ~ dunif(0,1)
-    int.p5 ~ dunif(0,1)
-    int.pA ~ dunif(0,1)
-    int.p1M ~ dunif(0,1)
-    int.p2M ~ dunif(0,1)
-    int.p3M ~ dunif(0,1)
-    int.p4M ~ dunif(0,1)
-    int.p5M ~ dunif(0,1)
-    int.pAM ~ dunif(0,1)
-
-    p.delB[1] ~ dunif(0,1)
-    b.delB[1] <- log(p.delB[1]/(1-p.delB[1]))
-    p.delB[2] ~ dunif(0,1)
-    b.delB[2] <- log(p.delB[2]/(1-p.delB[2]))
-    p.delB[3] ~ dunif(0,1)
-    b.delB[3] <- log(p.delB[3]/(1-p.delB[3]))
-    b.delB[4] <- -2 #0 on probability scale
-
-    #likelihood
-for (i in 1:n_fem) { #females
-    z[i, fc[i]:fc[i]] <- 1 #pups at first capture
-    # z_new[i, fc[i]:fc[i]] <- 1
-
-for (t in (fc[i] + 1):n_occasions) {
-      z[i,t] ~ dcat(state_probs[i,t-1,1:12])
-      y[i,t] ~ dcat(event_probs[i,t,1:11])
-      
-      #predictions
-      # z_new[i,t] ~ dcat(state_probs_new[i,t-1,1:12])
-      # y_new[i,t] ~ dcat(event_probs_new[i,t,1:11])
-      
-      #count yearlings and breeders
-      # yearlings[t] <- sum(z[1:n_fem,t]==2)
-      # yearlingsy[t] <- sum(y[1:n_fem,t]==2)
-      # breeders[t] <- sum(z[1:n_fem,t] > 6 & z[1:n_fem,t] < 10)
-      # breedersy[t] <- sum(y[1:n_fem,t] == 6 | y[1:n_fem,t] == 8 | y[1:n_fem,t] == 10)
-      # 
-      # yearlings_pred[t] <- sum(z_new[1:n_fem,t]==2)
-      # yearlings_predy[t] <- sum(y_new[1:n_fem,t]==2)
-      # breeders_pred[t] <- sum(z_new[1:n_fem,t] > 6 & z[1:n_fem,t] < 10)
-      # breeders_predy[t] <- sum(y_new[1:n_fem,t] == 6 | y_new[1:n_fem,t] == 8 | 
-      #                            y_new[1:n_fem,t] == 10)
-      
-    state_probs[i,t-1,1:12] <- getPHI_f(z = z[i,t-1], 
-                                      phiP = phiP[i,t-1], phi1 = phi1[i,t-1], phi2 = phi2[i,t-1], 
-                                      phi3 = phi3[i,t-1], phi4 = phi4[i,t-1], phi5 = phi5[i,t-1], 
-                                      phiB = phiB[i,t-1], phiNB = phiNB[i,t-1],
-                                      psi3 = psi3[i,t-1], psi4 = psi4[i,t-1],
-                                      psi5 = psi5[i,t-1], psiB = psiB[i,t-1], psiNB = psiNB[i,t-1])
-    
-    event_probs[i,t,1:11] <- getP_f(z = z[i,t], 
-                                    p1 = p1[i,t-1], p2 = p2[i,t-1], p3 = p3[i,t-1], 
-                                    p4 = p4[i,t-1], p5 = p5[i,t-1],
-                                    pB = pB[i,t-1], pNB = pNB[i,t-1], delB = delB[i,t-1])
-    
-    # state_probs_new[i,t-1,1:12] <- getPHI_f(z = z_new[i,t-1], 
-    #                                   phiP = phiP[i,t-1], phi1 = phi1[i,t-1], phi2 = phi2[i,t-1], 
-    #                                   phi3 = phi3[i,t-1], phi4 = phi4[i,t-1], phi5 = phi5[i,t-1], 
-    #                                   phiB = phiB[i,t-1], phiNB = phiNB[i,t-1],
-    #                                   psi3 = psi3[i,t-1], psi4 = psi4[i,t-1],
-    #                                   psi5 = psi5[i,t-1], psiB = psiB[i,t-1], psiNB = psiNB[i,t-1])
-    # 
-    # event_probs_new[i,t,1:11] <- getP_f(z = z_new[i,t], 
-    #                                 p1 = p1[i,t-1], p2 = p2[i,t-1], p3 = p3[i,t-1], 
-    #                                 p4 = p4[i,t-1], p5 = p5[i,t-1],
-    #                                 pB = pB[i,t-1], pNB = pNB[i,t-1], delB = delB[i,t-1])
-    
-    
-    } #t females
-} #i females
-    
-   for (i in 1:n_m) { #males
-    zm[i, fc_m[i]:fc_m[i]] <- 1
-    # zm_new[i, fc_m[i]:fc_m[i]] <- 1
-    
-  for (t in (fc_m[i] + 1):n_occasions) {
-    zm[i,t] ~ dcat(state_probs_m[i, t-1, 1:8])
-    ym[i,t] ~ dcat(event_probs_m[i,t,1:8])
-    
-    state_probs_m[i,t-1,1:8] <- getPHI_m(z = zm[i,t-1], 
-                                      phiPM = phiPM[i,t-1], phi1M = phi1M[i,t-1], phi2M = phi2M[i,t-1], 
-                                      phi3M = phi3M[i,t-1], phi4M = phi4M[i,t-1], phi5M = phi5M[i,t-1], 
-                                      phiBM = phiBM[i,t-1])
-    event_probs_m[i,t,1:8] <- getP_m(z = zm[i,t], 
-                                    p1M = p1M[i,t-1], p2M = p2M[i,t-1], p3M = p3M[i,t-1], 
-                                    p4M = p4M[i,t-1], p5M = p5M[i,t-1],
-                                    pBM = pBM[i,t-1])
-    
-    } #t
-   } #i
-    
-}) # mod   
-
- 
-#data
-nim.data <- list(y = y, ym = ym, 
-                # Q = matrix(c(1,-2,1,0,0,0,
-                #              -2,5,-4,1,0,0,
-                #              1,-4,6,-4,1,0,
-                #              0,1,-4,6,-4,1,
-                #              0,0,1,-4,5,-2,
-                #              0,0,0,1,-2,1), ncol = 6, nrow = 6, byrow = T),
-                 z = z.st, zm = z.st.m)
-
-nim.constants <- list(n_fem = dim(ch_fem)[1], n_m = dim(ch_m)[1], n_occasions = n_occasions,
-                      resights = res_mat, 
-                      # eff = eff,
-                      fc = fc, fc_m = fc_m)
-
-inits <- list(int.phiA = 0.9, int.phiAM = 0.9,
-              int.psi3 = 0.05, int.psi4 = 0.3, int.psi5 = 0.15, 
-              int.psiB = 0.9, int.psiNB = 0.20,
-              mean.pAM = 0.8, mean.p5M = 0.6,
-              # mu.phi = rep(qlogis(0.9),6), mu.phiM = rep(qlogis(0.9),6),
-  z = z.init, zm = z.init.m)
-
-### parameters
-params <- c('int.p1', 'int.p2', 'int.p3', 'int.p4', 'int.p5', 'int.pA', 
-            'int.p1M', 'int.p2M', 'int.p3M', 'int.p4M', 'int.p5M', 'int.pAM', 
-            "int.psi3", 'int.psi4', 'int.psi5', 'int.psiB', 'int.psiNB', 
-            'nat_all', 'nat4', 'nat5', 'nat6plus', 'int.phiA', 'int.phiAM', 
-            # 'yearlings', 'yearlings_pred',  'yearlingsy', 'yearlings_predy',
-            # 'breeders', 'breeders_pred', 'breedersy', 'breeders_predy',
-            # 'yearlingsM', 'yearlingsMy', 'yearlingsM_pred', 'yearlingsM_predy',
-            # 'twosM', 'twosMy', 'twosM_predy', 'twosM_pred',
-            'b.delB', 'p.delB', #'b.delBM', 'p.delBM', 
-            # 'mu.phi', 'mu.phiM', 
-            'mu.phiP', 'mu.phi1', 'mu.phi2', 'mu.phi3', 'mu.phi4', 'mu.phi5',
-            'mu.phiPM', 'mu.phi1M', 'mu.phi2M', 'mu.phi3M', 'mu.phi4M', 'mu.phi5M',
-            'int.phiP', 'int.phi1', 'int.phi2', 'int.phi3', 'int.phi4', 'int.phi5',
-            'int.phiPM', 'int.phi1M', 'int.phi2M', 'int.phi3M', 'int.phi4M', 'int.phi5M',
-            # 'tau.phiM',  'sigma.phiM', 'tau.phi',  'sigma.phi',
-            'z', 'zm', #'y_new', 'ym_new', #monitor z for WAIC, y and y_new for bayesian p
-            'mu.A', 'mu.AM')
-
-### run model
-# n.iter = 700; n.chains = 3; n.burnin = 100; nthin = 1; nAdapt = 10
-# n.iter = 15000; n.chains = 3; n.burnin = 8000; nthin = 1; nAdapt = 10
-n.iter = 10000; n.chains = 3; n.burnin = 5000; nthin = 1; nAdapt = 10
-
-start <- Sys.time()
-
-Rmodel <- nimbleModel(code = SSL_CJS, 
-                      constants = nim.constants, data = nim.data, 
-                      calculate = F, check = F, inits = inits)
-
-# Rmodel$y #returns data
-# Rmodel$simulate('z[1, 4]')
-# Rmodel$calculate('mean.p1')
-
-# Rmodel$calculate(c('y', 'y_new'))
-# Rmodel$simulate(c('y'))
-# Rmodel$y
-# 
-# Rmodel$logProb_y
-# Rmodel$logProb_y_new
-
-conf <- configureMCMC(Rmodel, monitors = params, control = list(adaptInterval = nAdapt), 
-                      thin = nthin, useConjugacy = FALSE, enableWAIC = TRUE)
-
-# CV_out <- runCrossValidate(conf, 4, MCMCcontrol = list(niter = n.iter, nburnin = n.burnin))
-
-Rmcmc <- buildMCMC(conf)  #produce uncompiled R mcmc function
-# Rmcmc <- buildMCMC(conf)
-Cmodel <- compileNimble(Rmodel)
-Cmcmc <- compileNimble(Rmcmc, project = Rmodel)
-
-# st2<-Sys.time()
-out <- runMCMC(Cmcmc, niter = n.iter, nburnin = n.burnin, nchains = n.chains, inits = inits,
-                 setSeed = FALSE, progressBar = TRUE,
-               WAIC = TRUE,
-               samplesAsCodaMCMC = TRUE)
-
-# elapsed <- Sys.time()-start
-
-# saveRDS(out, here::here('results', 'out_null_west.rds'))
-
-#diagnostics
-
-all_pars <- colnames(out$samples$chain1)
-noZ <- all_pars[which(!grepl('z', all_pars))]
-rhats <- gelman.diag(out$samples[,noZ], multivariate=F, autoburnin=F)
-# traceplot(out$samples[,noZ[1:37]])
-
-traceplot(out$samples[,grepl('psi', noZ)])
- 
-# max_rhat <- max(rhats$psrf[,1], na.rm = T)
-
-# effectiveSize(out[,params])
-
-```
-
-
 ```{r env waleu}
 
 #NB: PDO/MEI, PDO/NOI, MEI/NOI/NPI, albsa/vwnd, albsa/NPI
@@ -2967,3 +2331,931 @@ out <- runMCMC(Cmcmc, niter = n.iter, nburnin = n.burnin, nchains = n.chains, in
 
 
 ```
+
+```{r null waleu smooth age mvnorm}
+
+SSL_CJS <- nimbleCode({
+  
+# Priors and constraints
+for (i in 1:n_fem) { #females
+        for (t in 1:(n_occasions - 1)) {
+            logit(phiP[i,t]) <- mu.phi[1]
+            logit(phi1[i,t]) <- mu.phi[2]
+            logit(phi2[i,t]) <- mu.phi[3]
+            logit(phi3[i,t]) <- mu.phi[4]
+            logit(phi4[i,t]) <- mu.phi[5]
+            logit(phi5[i,t]) <- mu.phi[6]
+            logit(phiB[i,t]) <- mu.A
+            logit(phiNB[i,t]) <- mu.A
+            logit(delB[i,t]) <- b.delB[resights[i,t]]
+            logit(p1[i,t]) <- mean.p1 #+ b.eff[eff[t]]
+            logit(p2[i,t]) <- mean.p2 #+ b.eff[eff[t]]
+            logit(p3[i,t]) <- mean.p3 #+ b.eff[eff[t]]
+            logit(p4[i,t]) <- mean.p4 #+ b.eff[eff[t]]
+            logit(p5[i,t]) <- mean.p5 #+ b.eff[eff[t]]
+            logit(pB[i,t]) <- mean.pA #+ b.eff[eff[t]]
+            logit(pNB[i,t]) <- mean.pA #+ b.eff[eff[t]]
+            psi3[i,t] <- int.psi3
+            psi4[i,t] <- int.psi4
+            psi5[i,t] <- int.psi5
+            psiB[i,t] <- int.psiB
+            psiNB[i,t] <- int.psiNB
+        }
+}
+  
+   for (t in 4:n_occasions) {
+      nat_all[t] <- sum(z[1:n_fem,t] > 6 & z[1:n_fem,t] < 10)/sum(z[1:n_fem,t]>4 & z[1:n_fem,t]<12)
+      nat4[t] <- sum(z[1:n_fem,t] == 7)/sum(z[1:n_fem,t] == 7 | z[1:n_fem,t] == 5) #4 yo: 7/(5+7)
+      nat5[t] <- sum(z[1:n_fem,t] == 8)/sum(z[1:n_fem,t] == 8 | z[1:n_fem,t] == 6 | z[1:n_fem,t] == 10)
+      nat6plus[t] <- sum(z[1:n_fem,t] == 9)/sum(z[1:n_fem,t] == 9 | z[1:n_fem,t] == 11) #6+ yo: 9/(9+11)
+   }
+  
+  for (i in 1:n_m) { #males
+        for (t in 1:(n_occasions - 1)) {
+            logit(phiPM[i,t]) <- mu.phiM[1]
+            logit(phi1M[i,t]) <- mu.phiM[2]
+            logit(phi2M[i,t]) <- mu.phiM[3]
+            logit(phi3M[i,t]) <- mu.phiM[4]
+            logit(phi4M[i,t]) <- mu.phiM[5]
+            logit(phi5M[i,t]) <- mu.phiM[6]
+            logit(phiBM[i,t]) <- mu.AM
+            logit(p1M[i,t]) <- mean.p1M #+ b.eff[eff[t]]
+            logit(p2M[i,t]) <- mean.p2M #+ b.eff[eff[t]]
+            logit(p3M[i,t]) <- mean.p3M #+ b.eff[eff[t]]
+            logit(p4M[i,t]) <- mean.p4M #+ b.eff[eff[t]]
+            logit(p5M[i,t]) <- mean.p5M #+ b.eff[eff[t]]
+            logit(pBM[i,t]) <- mean.pAM #+ b.eff[eff[t]]
+        }
+  }
+  
+  ## survival
+  #females
+  mu.phi[1:6] ~ dmnorm(zeros[1:6], P[1:6,1:6])
+
+  for(i in 1:6) zeros[i] <- 0 # or just read this in as data
+  P[1:6,1:6] <- tau.phi*Q[1:6,1:6]
+  tau.phi <- 1/(sigma.phi*sigma.phi)
+  sigma.phi ~ dexp(1) # try different rates here for the exp prior 
+
+  #males
+  mu.phiM[1:6] ~ dmnorm(zeros.m[1:6], P.m[1:6,1:6])
+
+  for(i in 1:6) zeros.m[i] <- 0 
+  P.m[1:6,1:6] <- tau.phiM*Q[1:6,1:6]
+  tau.phiM <- 1/(sigma.phiM*sigma.phiM)
+  sigma.phiM ~ dexp(1)
+   
+    mu.A <- log(int.phiA/(1 - int.phiA))
+    mu.AM <- log(int.phiAM/(1 - int.phiAM))
+    int.phiA ~ dunif(0,1)
+    int.phiAM ~ dunif(0,1)
+  
+  #breeding
+    int.psi3 ~ dunif(0,1)
+    int.psi4 ~ dunif(0,1)
+    int.psi5 ~ dunif(0,1)
+    int.psiB ~ dunif(0,1)
+    int.psiNB ~ dunif(0,1)
+    
+  #detection
+    mean.p1 <- log(int.p1/(1 - int.p1))
+    mean.p2 <- log(int.p2/(1 - int.p2))
+    mean.p3 <- log(int.p3/(1 - int.p3))
+    mean.p4 <- log(int.p4/(1 - int.p4))
+    mean.p5 <- log(int.p5/(1 - int.p5))
+    mean.pA <- log(int.pA/(1 - int.pA))
+    mean.p1M <- log(int.p1M/(1 - int.p1M))
+    mean.p2M <- log(int.p2M/(1 - int.p2M))
+    mean.p3M <- log(int.p3M/(1 - int.p3M))
+    mean.p4M <- log(int.p4M/(1 - int.p4M))
+    mean.p5M <- log(int.p5M/(1 - int.p5M))
+    mean.pAM <- log(int.pAM/(1 - int.pAM))
+    int.p1 ~ dunif(0,1)
+    int.p2 ~ dunif(0,1)
+    int.p3 ~ dunif(0,1)
+    int.p4 ~ dunif(0,1)
+    int.p5 ~ dunif(0,1)
+    int.pA ~ dunif(0,1)
+    int.p1M ~ dunif(0,1)
+    int.p2M ~ dunif(0,1)
+    int.p3M ~ dunif(0,1)
+    int.p4M ~ dunif(0,1)
+    int.p5M ~ dunif(0,1)
+    int.pAM ~ dunif(0,1)
+
+    p.delB[1] ~ dunif(0,1)
+    b.delB[1] <- log(p.delB[1]/(1-p.delB[1]))
+    p.delB[2] ~ dunif(0,1)
+    b.delB[2] <- log(p.delB[2]/(1-p.delB[2]))
+    p.delB[3] ~ dunif(0,1)
+    b.delB[3] <- log(p.delB[3]/(1-p.delB[3]))
+    b.delB[4] <- -2 #0 on probability scale
+
+    #likelihood
+for (i in 1:n_fem) { #females
+    z[i, fc[i]:fc[i]] <- 1 #pups at first capture
+    # z_new[i, fc[i]:fc[i]] <- 1
+
+for (t in (fc[i] + 1):n_occasions) {
+      z[i,t] ~ dcat(state_probs[i,t-1,1:12])
+      y[i,t] ~ dcat(event_probs[i,t,1:11])
+      
+      #predictions
+      # z_new[i,t] ~ dcat(state_probs_new[i,t-1,1:12])
+      # y_new[i,t] ~ dcat(event_probs_new[i,t,1:11])
+      
+      #count yearlings and breeders
+      # yearlings[t] <- sum(z[1:n_fem,t]==2)
+      # yearlingsy[t] <- sum(y[1:n_fem,t]==2)
+      # breeders[t] <- sum(z[1:n_fem,t] > 6 & z[1:n_fem,t] < 10)
+      # breedersy[t] <- sum(y[1:n_fem,t] == 6 | y[1:n_fem,t] == 8 | y[1:n_fem,t] == 10)
+      # 
+      # yearlings_pred[t] <- sum(z_new[1:n_fem,t]==2)
+      # yearlings_predy[t] <- sum(y_new[1:n_fem,t]==2)
+      # breeders_pred[t] <- sum(z_new[1:n_fem,t] > 6 & z[1:n_fem,t] < 10)
+      # breeders_predy[t] <- sum(y_new[1:n_fem,t] == 6 | y_new[1:n_fem,t] == 8 | 
+      #                            y_new[1:n_fem,t] == 10)
+      
+    state_probs[i,t-1,1:12] <- getPHI_f(z = z[i,t-1], 
+                                      phiP = phiP[i,t-1], phi1 = phi1[i,t-1], phi2 = phi2[i,t-1], 
+                                      phi3 = phi3[i,t-1], phi4 = phi4[i,t-1], phi5 = phi5[i,t-1], 
+                                      phiB = phiB[i,t-1], phiNB = phiNB[i,t-1],
+                                      psi3 = psi3[i,t-1], psi4 = psi4[i,t-1],
+                                      psi5 = psi5[i,t-1], psiB = psiB[i,t-1], psiNB = psiNB[i,t-1])
+    
+    event_probs[i,t,1:11] <- getP_f(z = z[i,t], 
+                                    p1 = p1[i,t-1], p2 = p2[i,t-1], p3 = p3[i,t-1], 
+                                    p4 = p4[i,t-1], p5 = p5[i,t-1],
+                                    pB = pB[i,t-1], pNB = pNB[i,t-1], delB = delB[i,t-1])
+    
+    # state_probs_new[i,t-1,1:12] <- getPHI_f(z = z_new[i,t-1], 
+    #                                   phiP = phiP[i,t-1], phi1 = phi1[i,t-1], phi2 = phi2[i,t-1], 
+    #                                   phi3 = phi3[i,t-1], phi4 = phi4[i,t-1], phi5 = phi5[i,t-1], 
+    #                                   phiB = phiB[i,t-1], phiNB = phiNB[i,t-1],
+    #                                   psi3 = psi3[i,t-1], psi4 = psi4[i,t-1],
+    #                                   psi5 = psi5[i,t-1], psiB = psiB[i,t-1], psiNB = psiNB[i,t-1])
+    # 
+    # event_probs_new[i,t,1:11] <- getP_f(z = z_new[i,t], 
+    #                                 p1 = p1[i,t-1], p2 = p2[i,t-1], p3 = p3[i,t-1], 
+    #                                 p4 = p4[i,t-1], p5 = p5[i,t-1],
+    #                                 pB = pB[i,t-1], pNB = pNB[i,t-1], delB = delB[i,t-1])
+    
+    
+    } #t females
+} #i females
+    
+   for (i in 1:n_m) { #males
+    zm[i, fc_m[i]:fc_m[i]] <- 1
+    # zm_new[i, fc_m[i]:fc_m[i]] <- 1
+    
+  for (t in (fc_m[i] + 1):n_occasions) {
+    zm[i,t] ~ dcat(state_probs_m[i, t-1, 1:8])
+    ym[i,t] ~ dcat(event_probs_m[i,t,1:8])
+    
+    # zm_new[i,t] ~ dcat(state_probs_m_new[i,t-1,1:8])
+    # ym_new[i,t] ~ dcat(event_probs_m_new[i,t,1:8])
+    
+      #count yearlings and breeders
+      # yearlingsM[t] <- sum(zm[1:n_m,t]==2)
+      # yearlingsMy[t] <- sum(ym[1:n_m,t]==2)
+      # 
+      # yearlingsM_pred[t] <- sum(zm_new[1:n_m,t]==2)
+      # yearlingsM_predy[t] <- sum(ym_new[1:n_m,t]==2)
+      # 
+      # twosM[t] <- sum(zm[1:n_m,t]==3)
+      # twosMy[t] <- sum(ym[1:n_m,t]==3)
+      # 
+      # twosM_pred[t] <- sum(zm_new[1:n_m,t]==3)
+      # twosM_predy[t] <- sum(ym_new[1:n_m,t]==3)
+    
+      # dev <- -2*logdensity.cat(y[i,t,], z[i,t]p[i,t])
+      # dev_new <- -2*logdensity.cat(y_new[i,t,], z_new[i,t]p[i,t])
+    
+    state_probs_m[i,t-1,1:8] <- getPHI_m(z = zm[i,t-1], 
+                                      phiPM = phiPM[i,t-1], phi1M = phi1M[i,t-1], phi2M = phi2M[i,t-1], 
+                                      phi3M = phi3M[i,t-1], phi4M = phi4M[i,t-1], phi5M = phi5M[i,t-1], 
+                                      phiBM = phiBM[i,t-1])
+    event_probs_m[i,t,1:8] <- getP_m(z = zm[i,t], 
+                                    p1M = p1M[i,t-1], p2M = p2M[i,t-1], p3M = p3M[i,t-1], 
+                                    p4M = p4M[i,t-1], p5M = p5M[i,t-1],
+                                    pBM = pBM[i,t-1])
+    
+    # state_probs_m_new[i,t-1,1:8] <- getPHI_m(z = zm_new[i,t-1], 
+    #                                   phiPM = phiPM[i,t-1], phi1M = phi1M[i,t-1], phi2M = phi2M[i,t-1], 
+    #                                   phi3M = phi3M[i,t-1], phi4M = phi4M[i,t-1], phi5M = phi5M[i,t-1], 
+    #                                   phiBM = phiBM[i,t-1])
+    # event_probs_m_new[i,t,1:8] <- getP_m(z = zm_new[i,t], 
+    #                                 p1M = p1M[i,t-1], p2M = p2M[i,t-1], p3M = p3M[i,t-1], 
+    #                                 p4M = p4M[i,t-1], p5M = p5M[i,t-1],
+    #                                 pBM = pBM[i,t-1])
+    } #t
+   } #i
+    
+}) # mod   
+
+ 
+#data
+nim.data <- list(y = y, ym = ym, 
+                Q = matrix(c(1,-2,1,0,0,0,
+                             -2,5,-4,1,0,0,
+                             1,-4,6,-4,1,0,
+                             0,1,-4,6,-4,1,
+                             0,0,1,-4,5,-2,
+                             0,0,0,1,-2,1), ncol = 6, nrow = 6, byrow = T),
+                 z = z.st, zm = z.st.m)
+
+nim.constants <- list(n_fem = dim(ch_fem)[1], n_m = dim(ch_m)[1], n_occasions = n_occasions,
+                      resights = res_mat, 
+                      # eff = eff,
+                      fc = fc, fc_m = fc_m)
+
+inits <- list(int.phiA = 0.9, int.phiAM = 0.9,
+              int.psi3 = 0.05, int.psi4 = 0.3, int.psi5 = 0.15, 
+              int.psiB = 0.9, int.psiNB = 0.20,
+              mean.pAM = 0.8, mean.p5M = 0.6,
+              # mu.phi = rep(qlogis(0.9),6), mu.phiM = rep(qlogis(0.9),6),
+  z = z.init, zm = z.init.m)
+
+### parameters
+params <- c('int.p1', 'int.p2', 'int.p3', 'int.p4', 'int.p5', 'int.pA', 
+            'int.p1M', 'int.p2M', 'int.p3M', 'int.p4M', 'int.p5M', 'int.pAM', 
+            "int.psi3", 'int.psi4', 'int.psi5', 'int.psiB', 'int.psiNB', 
+            'nat_all', 'nat4', 'nat5', 'nat6plus', 'int.phiA', 'int.phiAM', 
+            # 'yearlings', 'yearlings_pred',  'yearlingsy', 'yearlings_predy',
+            # 'breeders', 'breeders_pred', 'breedersy', 'breeders_predy',
+            # 'yearlingsM', 'yearlingsMy', 'yearlingsM_pred', 'yearlingsM_predy',
+            # 'twosM', 'twosMy', 'twosM_predy', 'twosM_pred',
+            'b.delB', 'p.delB', #'b.delBM', 'p.delBM', 
+            'mu.phi', 'mu.phiM', 'tau.phiM',  'sigma.phiM', 'tau.phi',  'sigma.phi',
+            'z', 'zm', #'y_new', 'ym_new', #monitor z for WAIC, y and y_new for bayesian p
+            'mu.A', 'mu.AM')
+
+### run model
+# n.iter = 700; n.chains = 3; n.burnin = 100; nthin = 1; nAdapt = 10
+# n.iter = 15000; n.chains = 3; n.burnin = 8000; nthin = 1; nAdapt = 10
+n.iter = 10000; n.chains = 3; n.burnin = 5000; nthin = 1; nAdapt = 10
+
+start <- Sys.time()
+
+Rmodel <- nimbleModel(code = SSL_CJS, 
+                      constants = nim.constants, data = nim.data, 
+                      calculate = F, check = F, inits = inits)
+
+# Rmodel$y #returns data
+# Rmodel$simulate('z[1, 4]')
+# Rmodel$calculate('mean.p1')
+
+# Rmodel$calculate(c('y', 'y_new'))
+# Rmodel$simulate(c('y'))
+# Rmodel$y
+# 
+# Rmodel$logProb_y
+# Rmodel$logProb_y_new
+
+conf <- configureMCMC(Rmodel, monitors = params, control = list(adaptInterval = nAdapt), 
+                      thin = nthin, useConjugacy = FALSE, enableWAIC = TRUE)
+
+# CV_out <- runCrossValidate(conf, 4, MCMCcontrol = list(niter = n.iter, nburnin = n.burnin))
+
+Rmcmc <- buildMCMC(conf)  #produce uncompiled R mcmc function
+# Rmcmc <- buildMCMC(conf)
+Cmodel <- compileNimble(Rmodel)
+Cmcmc <- compileNimble(Rmcmc, project = Rmodel)
+
+# st2<-Sys.time()
+out <- runMCMC(Cmcmc, niter = n.iter, nburnin = n.burnin, nchains = n.chains, inits = inits,
+                 setSeed = FALSE, progressBar = TRUE,
+               WAIC = TRUE,
+               samplesAsCodaMCMC = TRUE)
+
+# elapsed <- Sys.time()-start
+
+# saveRDS(out, here::here('results', 'out_null_west.rds'))
+
+#diagnostics
+
+all_pars <- colnames(out$samples$chain1)
+noZ <- all_pars[which(!grepl('z', all_pars))]
+rhats <- gelman.diag(out$samples[,noZ], multivariate=F, autoburnin=F)
+# traceplot(out$samples[,noZ[1:37]])
+
+# traceplot(out$samples[,grepl('psi', noZ)])
+traceplot(out$samples[,'int.phiPM'])
+ 
+# max_rhat <- max(rhats$psrf[,1], na.rm = T)
+
+# effectiveSize(out[,params])
+
+```
+
+```{r null waleu smooth age car}
+
+#returns precision matrix weights
+iar.Q <- function (n, p, return_nimble=TRUE){
+  if (n < 2 * p)
+    stop("n must be >= 2*p\n")
+  tmp1 <- out <- matrix(0, n, n)
+  tmp2 <- ((-1)^c(0:p)) * choose(p, c(0:p))
+  for (i in (p + 1):n) {
+    tmp1[, i] <- c(rep(0, i - p - 1), tmp2, rep(0, n - i))
+  }
+  for (i in n:(p + 1)) {
+    tmp4 <- tmp1[, c(1:n)[tmp1[i, ] != 0]]
+    tmp5 <- tmp1[i, tmp1[i, ] != 0]
+    tmp6 <- t(t(tmp4) * tmp5)
+    tmp6[i, ] <- 0
+    out[i, ] <- -rowSums(tmp6)
+  }
+  out[1:p, ] <- out[n:(n - p + 1), n:1]
+  out <- diag(apply(out, 1, sum)) - out
+  if(!return_nimble){
+    return(out)
+  } else{
+    A <- -out; diag(A) <- 0
+    num <- rowSums(out!=0)-1
+    adj <- unlist(apply(A, 1, function(v){which(v!=0)})) 
+    w <- unlist(apply(A, 1, function(v)v[which(v!=0)]))
+    r <- nrow(out)-sum(zapsmall(eigen(out)$values)!=0)
+    return(
+      list(L=length(adj), num=num, weights=w, adj=adj, c=r)
+    )
+  }
+}
+
+SSL_CJS <- nimbleCode({
+  
+# Priors and constraints
+for (i in 1:n_fem) { #females
+        for (t in 1:(n_occasions - 1)) {
+            logit(phiP[i,t]) <- mu.phi[1]
+            logit(phi1[i,t]) <- mu.phi[2]
+            logit(phi2[i,t]) <- mu.phi[3]
+            logit(phi3[i,t]) <- mu.phi[4]
+            logit(phi4[i,t]) <- mu.phi[5]
+            logit(phi5[i,t]) <- mu.phi[6]
+            logit(phiB[i,t]) <- mu.A
+            logit(phiNB[i,t]) <- mu.A
+            logit(delB[i,t]) <- b.delB[resights[i,t]]
+            logit(p1[i,t]) <- mean.p1 #+ b.eff[eff[t]]
+            logit(p2[i,t]) <- mean.p2 #+ b.eff[eff[t]]
+            logit(p3[i,t]) <- mean.p3 #+ b.eff[eff[t]]
+            logit(p4[i,t]) <- mean.p4 #+ b.eff[eff[t]]
+            logit(p5[i,t]) <- mean.p5 #+ b.eff[eff[t]]
+            logit(pB[i,t]) <- mean.pA #+ b.eff[eff[t]]
+            logit(pNB[i,t]) <- mean.pA #+ b.eff[eff[t]]
+            psi3[i,t] <- int.psi3
+            psi4[i,t] <- int.psi4
+            psi5[i,t] <- int.psi5
+            psiB[i,t] <- int.psiB
+            psiNB[i,t] <- int.psiNB
+        }
+}
+  
+   for (t in 4:n_occasions) {
+      nat_all[t] <- sum(z[1:n_fem,t] > 6 & z[1:n_fem,t] < 10)/sum(z[1:n_fem,t]>4 & z[1:n_fem,t]<12)
+      nat4[t] <- sum(z[1:n_fem,t] == 7)/sum(z[1:n_fem,t] == 7 | z[1:n_fem,t] == 5) #4 yo: 7/(5+7)
+      nat5[t] <- sum(z[1:n_fem,t] == 8)/sum(z[1:n_fem,t] == 8 | z[1:n_fem,t] == 6 | z[1:n_fem,t] == 10)
+      nat6plus[t] <- sum(z[1:n_fem,t] == 9)/sum(z[1:n_fem,t] == 9 | z[1:n_fem,t] == 11) #6+ yo: 9/(9+11)
+   }
+  
+  for (i in 1:n_m) { #males
+        for (t in 1:(n_occasions - 1)) {
+            logit(phiPM[i,t]) <- mu.phiM[1]
+            logit(phi1M[i,t]) <- mu.phiM[2]
+            logit(phi2M[i,t]) <- mu.phiM[3]
+            logit(phi3M[i,t]) <- mu.phiM[4]
+            logit(phi4M[i,t]) <- mu.phiM[5]
+            logit(phi5M[i,t]) <- mu.phiM[6]
+            logit(phiBM[i,t]) <- mu.AM
+            logit(p1M[i,t]) <- mean.p1M #+ b.eff[eff[t]]
+            logit(p2M[i,t]) <- mean.p2M #+ b.eff[eff[t]]
+            logit(p3M[i,t]) <- mean.p3M #+ b.eff[eff[t]]
+            logit(p4M[i,t]) <- mean.p4M #+ b.eff[eff[t]]
+            logit(p5M[i,t]) <- mean.p5M #+ b.eff[eff[t]]
+            logit(pBM[i,t]) <- mean.pAM #+ b.eff[eff[t]]
+        }
+  }
+  
+  ## survival
+  mu.phi[1:6] ~ dcar_normal(adj[1:L], weights[1:L], num[1:6], t.mu, c)
+  mu.phiM[1:6] ~ dcar_normal(adj[1:L], weights[1:L], num[1:6], t.muM, c)
+    
+  t.mu <- 1/(s.mu*s.mu) #precision
+  s.mu ~ dexp(1) #standard deviation
+  
+  t.muM <- 1/(s.muM*s.muM) #precision
+  s.muM ~ dexp(1) #standard deviation
+  
+  mu.A <- log(int.phiA/(1 - int.phiA))
+  mu.AM <- log(int.phiAM/(1 - int.phiAM))
+  int.phiA ~ dunif(0,1)
+  int.phiAM ~ dunif(0,1)
+  
+  #breeding
+    int.psi3 ~ dunif(0,1)
+    int.psi4 ~ dunif(0,1)
+    int.psi5 ~ dunif(0,1)
+    int.psiB ~ dunif(0,1)
+    int.psiNB ~ dunif(0,1)
+    
+  #detection
+    mean.p1 <- log(int.p1/(1 - int.p1))
+    mean.p2 <- log(int.p2/(1 - int.p2))
+    mean.p3 <- log(int.p3/(1 - int.p3))
+    mean.p4 <- log(int.p4/(1 - int.p4))
+    mean.p5 <- log(int.p5/(1 - int.p5))
+    mean.pA <- log(int.pA/(1 - int.pA))
+    mean.p1M <- log(int.p1M/(1 - int.p1M))
+    mean.p2M <- log(int.p2M/(1 - int.p2M))
+    mean.p3M <- log(int.p3M/(1 - int.p3M))
+    mean.p4M <- log(int.p4M/(1 - int.p4M))
+    mean.p5M <- log(int.p5M/(1 - int.p5M))
+    mean.pAM <- log(int.pAM/(1 - int.pAM))
+    int.p1 ~ dunif(0,1)
+    int.p2 ~ dunif(0,1)
+    int.p3 ~ dunif(0,1)
+    int.p4 ~ dunif(0,1)
+    int.p5 ~ dunif(0,1)
+    int.pA ~ dunif(0,1)
+    int.p1M ~ dunif(0,1)
+    int.p2M ~ dunif(0,1)
+    int.p3M ~ dunif(0,1)
+    int.p4M ~ dunif(0,1)
+    int.p5M ~ dunif(0,1)
+    int.pAM ~ dunif(0,1)
+
+    p.delB[1] ~ dunif(0,1)
+    b.delB[1] <- log(p.delB[1]/(1-p.delB[1]))
+    p.delB[2] ~ dunif(0,1)
+    b.delB[2] <- log(p.delB[2]/(1-p.delB[2]))
+    p.delB[3] ~ dunif(0,1)
+    b.delB[3] <- log(p.delB[3]/(1-p.delB[3]))
+    b.delB[4] <- -2 #0 on probability scale
+
+    #likelihood
+for (i in 1:n_fem) { #females
+    z[i, fc[i]:fc[i]] <- 1 #pups at first capture
+    # z_new[i, fc[i]:fc[i]] <- 1
+
+for (t in (fc[i] + 1):n_occasions) {
+      z[i,t] ~ dcat(state_probs[i,t-1,1:12])
+      y[i,t] ~ dcat(event_probs[i,t,1:11])
+      
+      #predictions
+      # z_new[i,t] ~ dcat(state_probs_new[i,t-1,1:12])
+      # y_new[i,t] ~ dcat(event_probs_new[i,t,1:11])
+      
+      #count yearlings and breeders
+      # yearlings[t] <- sum(z[1:n_fem,t]==2)
+      # yearlingsy[t] <- sum(y[1:n_fem,t]==2)
+      # breeders[t] <- sum(z[1:n_fem,t] > 6 & z[1:n_fem,t] < 10)
+      # breedersy[t] <- sum(y[1:n_fem,t] == 6 | y[1:n_fem,t] == 8 | y[1:n_fem,t] == 10)
+      # 
+      # yearlings_pred[t] <- sum(z_new[1:n_fem,t]==2)
+      # yearlings_predy[t] <- sum(y_new[1:n_fem,t]==2)
+      # breeders_pred[t] <- sum(z_new[1:n_fem,t] > 6 & z[1:n_fem,t] < 10)
+      # breeders_predy[t] <- sum(y_new[1:n_fem,t] == 6 | y_new[1:n_fem,t] == 8 | 
+      #                            y_new[1:n_fem,t] == 10)
+      
+    state_probs[i,t-1,1:12] <- getPHI_f(z = z[i,t-1], 
+                                      phiP = phiP[i,t-1], phi1 = phi1[i,t-1], phi2 = phi2[i,t-1], 
+                                      phi3 = phi3[i,t-1], phi4 = phi4[i,t-1], phi5 = phi5[i,t-1], 
+                                      phiB = phiB[i,t-1], phiNB = phiNB[i,t-1],
+                                      psi3 = psi3[i,t-1], psi4 = psi4[i,t-1],
+                                      psi5 = psi5[i,t-1], psiB = psiB[i,t-1], psiNB = psiNB[i,t-1])
+    
+    event_probs[i,t,1:11] <- getP_f(z = z[i,t], 
+                                    p1 = p1[i,t-1], p2 = p2[i,t-1], p3 = p3[i,t-1], 
+                                    p4 = p4[i,t-1], p5 = p5[i,t-1],
+                                    pB = pB[i,t-1], pNB = pNB[i,t-1], delB = delB[i,t-1])
+    } #t females
+} #i females
+    
+   for (i in 1:n_m) { #males
+    zm[i, fc_m[i]:fc_m[i]] <- 1
+
+  for (t in (fc_m[i] + 1):n_occasions) {
+    zm[i,t] ~ dcat(state_probs_m[i, t-1, 1:8])
+    ym[i,t] ~ dcat(event_probs_m[i,t,1:8])
+    
+    state_probs_m[i,t-1,1:8] <- getPHI_m(z = zm[i,t-1], 
+                                      phiPM = phiPM[i,t-1], phi1M = phi1M[i,t-1], phi2M = phi2M[i,t-1], 
+                                      phi3M = phi3M[i,t-1], phi4M = phi4M[i,t-1], phi5M = phi5M[i,t-1], 
+                                      phiBM = phiBM[i,t-1])
+    event_probs_m[i,t,1:8] <- getP_m(z = zm[i,t], 
+                                    p1M = p1M[i,t-1], p2M = p2M[i,t-1], p3M = p3M[i,t-1], 
+                                    p4M = p4M[i,t-1], p5M = p5M[i,t-1],
+                                    pBM = pBM[i,t-1])
+    
+    } #t
+   } #i
+    
+}) # mod   
+
+ 
+#data
+Q_list <- iar.Q(6,2)
+
+nim.data <- list(y = y, ym = ym, z = z.st, zm = z.st.m)
+
+nim.constants <- list(n_fem = dim(ch_fem)[1], n_m = dim(ch_m)[1], n_occasions = n_occasions,
+                      resights = res_mat, 
+                      L=Q_list$L, adj=Q_list$adj,
+                      weights=Q_list$weights, num=Q_list$num, c=Q_list$c,
+                      fc = fc, fc_m = fc_m)
+
+inits <- list(int.phiA = 0.9, int.phiAM = 0.9,
+              int.psi3 = 0.05, int.psi4 = 0.3, int.psi5 = 0.15, 
+              int.psiB = 0.9, int.psiNB = 0.20,
+              mean.pAM = 0.8, mean.p5M = 0.6,
+              mu.phi = rep(qlogis(0.9),6), mu.phiM = rep(qlogis(0.9),6),
+  z = z.init, zm = z.init.m)
+
+### parameters
+params <- c('int.p1', 'int.p2', 'int.p3', 'int.p4', 'int.p5', 'int.pA', 
+            'int.p1M', 'int.p2M', 'int.p3M', 'int.p4M', 'int.p5M', 'int.pAM', 
+            "int.psi3", 'int.psi4', 'int.psi5', 'int.psiB', 'int.psiNB', 
+            'nat_all', 'nat4', 'nat5', 'nat6plus', 'int.phiA', 'int.phiAM', 
+            'b.delB', 'p.delB', #'b.delBM', 'p.delBM', 
+            'mu.phi', 'mu.phiM', #'tau.phiM',  'sigma.phiM', 'tau.phi',  'sigma.phi',
+            'z', 'zm', #'y_new', 'ym_new', #monitor z for WAIC, y and y_new for bayesian p
+            'mu.A', 'mu.AM')
+
+### run model
+# n.iter = 700; n.chains = 3; n.burnin = 100; nthin = 1; nAdapt = 10
+n.iter = 15000; n.chains = 3; n.burnin = 8000; nthin = 1; nAdapt = 10
+# n.iter = 10000; n.chains = 3; n.burnin = 5000; nthin = 1; nAdapt = 10
+
+start <- Sys.time()
+
+Rmodel <- nimbleModel(code = SSL_CJS, 
+                      constants = nim.constants, data = nim.data, 
+                      calculate = F, check = F, inits = inits)
+
+# Rmodel$y #returns data
+# Rmodel$simulate('z[1, 4]')
+# Rmodel$calculate('mean.p1')
+
+# Rmodel$calculate(c('y', 'y_new'))
+# Rmodel$simulate(c('y'))
+# Rmodel$y
+# 
+# Rmodel$logProb_y
+# Rmodel$logProb_y_new
+
+conf <- configureMCMC(Rmodel, monitors = params, control = list(adaptInterval = nAdapt), 
+                      thin = nthin, useConjugacy = FALSE, enableWAIC = TRUE)
+
+# CV_out <- runCrossValidate(conf, 4, MCMCcontrol = list(niter = n.iter, nburnin = n.burnin))
+
+Rmcmc <- buildMCMC(conf)  #produce uncompiled R mcmc function
+# Rmcmc <- buildMCMC(conf)
+Cmodel <- compileNimble(Rmodel)
+Cmcmc <- compileNimble(Rmcmc, project = Rmodel)
+
+# st2<-Sys.time()
+out <- runMCMC(Cmcmc, niter = n.iter, nburnin = n.burnin, nchains = n.chains, inits = inits,
+                 setSeed = FALSE, progressBar = TRUE,
+               WAIC = TRUE,
+               samplesAsCodaMCMC = TRUE)
+
+# elapsed <- Sys.time()-start
+
+saveRDS(out, here::here('results', 'out_null_west_car.rds'))
+
+#diagnostics
+
+all_pars <- colnames(out$samples$chain1)
+noZ <- all_pars[which(!grepl('z', all_pars))]
+rhats <- gelman.diag(out$samples[,noZ], multivariate=F, autoburnin=F)
+# traceplot(out$samples[,noZ[1:37]])
+
+# traceplot(out$samples[,grepl('psi', noZ)])
+traceplot(out$samples[,'int.phiPM'])
+ 
+# max_rhat <- max(rhats$psrf[,1], na.rm = T)
+
+# effectiveSize(out[,params])
+
+```
+
+
+```{r null waleu indep age}
+
+SSL_CJS <- nimbleCode({
+  
+# Priors and constraints
+for (i in 1:n_fem) { #females
+        for (t in 1:(n_occasions - 1)) {
+            logit(phiP[i,t]) <- mu.phiP
+            logit(phi1[i,t]) <- mu.phi1
+            logit(phi2[i,t]) <- mu.phi2
+            logit(phi3[i,t]) <- mu.phi3
+            logit(phi4[i,t]) <- mu.phi4
+            logit(phi5[i,t]) <- mu.phi5
+            logit(phiB[i,t]) <- mu.A
+            logit(phiNB[i,t]) <- mu.A
+            logit(delB[i,t]) <- b.delB[resights[i,t]]
+            logit(p1[i,t]) <- mean.p1 #+ b.eff[eff[t]]
+            logit(p2[i,t]) <- mean.p2 #+ b.eff[eff[t]]
+            logit(p3[i,t]) <- mean.p3 #+ b.eff[eff[t]]
+            logit(p4[i,t]) <- mean.p4 #+ b.eff[eff[t]]
+            logit(p5[i,t]) <- mean.p5 #+ b.eff[eff[t]]
+            logit(pB[i,t]) <- mean.pA #+ b.eff[eff[t]]
+            logit(pNB[i,t]) <- mean.pA #+ b.eff[eff[t]]
+            psi3[i,t] <- int.psi3
+            psi4[i,t] <- int.psi4
+            psi5[i,t] <- int.psi5
+            psiB[i,t] <- int.psiB
+            psiNB[i,t] <- int.psiNB
+        }
+}
+  
+   for (t in 4:n_occasions) {
+      nat_all[t] <- sum(z[1:n_fem,t] > 6 & z[1:n_fem,t] < 10)/sum(z[1:n_fem,t]>4 & z[1:n_fem,t]<12)
+      nat4[t] <- sum(z[1:n_fem,t] == 7)/sum(z[1:n_fem,t] == 7 | z[1:n_fem,t] == 5) #4 yo: 7/(5+7)
+      nat5[t] <- sum(z[1:n_fem,t] == 8)/sum(z[1:n_fem,t] == 8 | z[1:n_fem,t] == 6 | z[1:n_fem,t] == 10)
+      nat6plus[t] <- sum(z[1:n_fem,t] == 9)/sum(z[1:n_fem,t] == 9 | z[1:n_fem,t] == 11) #6+ yo: 9/(9+11)
+   }
+  
+  for (i in 1:n_m) { #males
+        for (t in 1:(n_occasions - 1)) {
+            logit(phiPM[i,t]) <- mu.phiPM
+            logit(phi1M[i,t]) <- mu.phi1M
+            logit(phi2M[i,t]) <- mu.phi2M
+            logit(phi3M[i,t]) <- mu.phi3M
+            logit(phi4M[i,t]) <- mu.phi4M
+            logit(phi5M[i,t]) <- mu.phi5M
+            logit(phiBM[i,t]) <- mu.AM
+            logit(p1M[i,t]) <- mean.p1M #+ b.eff[eff[t]]
+            logit(p2M[i,t]) <- mean.p2M #+ b.eff[eff[t]]
+            logit(p3M[i,t]) <- mean.p3M #+ b.eff[eff[t]]
+            logit(p4M[i,t]) <- mean.p4M #+ b.eff[eff[t]]
+            logit(p5M[i,t]) <- mean.p5M #+ b.eff[eff[t]]
+            logit(pBM[i,t]) <- mean.pAM #+ b.eff[eff[t]]
+        }
+  }
+  
+  ## survival
+  #females
+  # mu.phi[1:6] ~ dmnorm(zeros[1:6], P[1:6,1:6])
+  # 
+  # for(i in 1:6) zeros[i] <- 0 # or just read this in as data
+  # P[1:6,1:6] <- tau.phi*Q[1:6,1:6]
+  # tau.phi <- 1/(sigma.phi*sigma.phi)
+  # sigma.phi ~ dexp(1) # try different rates here for the exp prior 
+  
+  #males
+  # mu.phiM[1:6] ~ dmnorm(zeros.m[1:6], P.m[1:6,1:6])
+  # 
+  # for(i in 1:6) zeros.m[i] <- 0 
+  # P.m[1:6,1:6] <- tau.phiM*Q[1:6,1:6]
+  # tau.phiM <- 1/(sigma.phiM*sigma.phiM)
+  # sigma.phiM ~ dexp(1)
+  
+    mu.phiP <- log(int.phiP/(1 - int.phiP))
+    mu.phi1 <- log(int.phi1/(1 - int.phi1))
+    mu.phi2 <- log(int.phi2/(1 - int.phi2))
+    mu.phi3 <- log(int.phi3/(1 - int.phi3))
+    mu.phi4 <- log(int.phi4/(1 - int.phi4))
+    mu.phi5 <- log(int.phi5/(1 - int.phi5))
+    int.phiP ~ dunif(0,1)
+    int.phi1 ~ dunif(0,1)
+    int.phi2 ~ dunif(0,1)
+    int.phi3 ~ dunif(0,1)
+    int.phi4 ~ dunif(0,1)
+    int.phi5 ~ dunif(0,1)
+
+    mu.phiPM <- log(int.phiPM/(1 - int.phiPM))
+    mu.phi1M <- log(int.phi1M/(1 - int.phi1M))
+    mu.phi2M <- log(int.phi2M/(1 - int.phi2M))
+    mu.phi3M <- log(int.phi3M/(1 - int.phi3M))
+    mu.phi4M <- log(int.phi4M/(1 - int.phi4M))
+    mu.phi5M <- log(int.phi5M/(1 - int.phi5M))
+    int.phiPM ~ dunif(0,1)
+    int.phi1M ~ dunif(0,1)
+    int.phi2M ~ dunif(0,1)
+    int.phi3M ~ dunif(0,1)
+    int.phi4M ~ dunif(0,1)
+    int.phi5M ~ dunif(0,1)
+   
+    mu.A <- log(int.phiA/(1 - int.phiA))
+    mu.AM <- log(int.phiAM/(1 - int.phiAM))
+    int.phiA ~ dunif(0,1)
+    int.phiAM ~ dunif(0,1)
+  
+  #breeding
+    int.psi3 ~ dunif(0,1)
+    int.psi4 ~ dunif(0,1)
+    int.psi5 ~ dunif(0,1)
+    int.psiB ~ dunif(0,1)
+    int.psiNB ~ dunif(0,1)
+    
+  #detection
+    mean.p1 <- log(int.p1/(1 - int.p1))
+    mean.p2 <- log(int.p2/(1 - int.p2))
+    mean.p3 <- log(int.p3/(1 - int.p3))
+    mean.p4 <- log(int.p4/(1 - int.p4))
+    mean.p5 <- log(int.p5/(1 - int.p5))
+    mean.pA <- log(int.pA/(1 - int.pA))
+    mean.p1M <- log(int.p1M/(1 - int.p1M))
+    mean.p2M <- log(int.p2M/(1 - int.p2M))
+    mean.p3M <- log(int.p3M/(1 - int.p3M))
+    mean.p4M <- log(int.p4M/(1 - int.p4M))
+    mean.p5M <- log(int.p5M/(1 - int.p5M))
+    mean.pAM <- log(int.pAM/(1 - int.pAM))
+    int.p1 ~ dunif(0,1)
+    int.p2 ~ dunif(0,1)
+    int.p3 ~ dunif(0,1)
+    int.p4 ~ dunif(0,1)
+    int.p5 ~ dunif(0,1)
+    int.pA ~ dunif(0,1)
+    int.p1M ~ dunif(0,1)
+    int.p2M ~ dunif(0,1)
+    int.p3M ~ dunif(0,1)
+    int.p4M ~ dunif(0,1)
+    int.p5M ~ dunif(0,1)
+    int.pAM ~ dunif(0,1)
+
+    p.delB[1] ~ dunif(0,1)
+    b.delB[1] <- log(p.delB[1]/(1-p.delB[1]))
+    p.delB[2] ~ dunif(0,1)
+    b.delB[2] <- log(p.delB[2]/(1-p.delB[2]))
+    p.delB[3] ~ dunif(0,1)
+    b.delB[3] <- log(p.delB[3]/(1-p.delB[3]))
+    b.delB[4] <- -2 #0 on probability scale
+
+    #likelihood
+for (i in 1:n_fem) { #females
+    z[i, fc[i]:fc[i]] <- 1 #pups at first capture
+    # z_new[i, fc[i]:fc[i]] <- 1
+
+for (t in (fc[i] + 1):n_occasions) {
+      z[i,t] ~ dcat(state_probs[i,t-1,1:12])
+      y[i,t] ~ dcat(event_probs[i,t,1:11])
+      
+      #predictions
+      # z_new[i,t] ~ dcat(state_probs_new[i,t-1,1:12])
+      # y_new[i,t] ~ dcat(event_probs_new[i,t,1:11])
+      
+      #count yearlings and breeders
+      # yearlings[t] <- sum(z[1:n_fem,t]==2)
+      # yearlingsy[t] <- sum(y[1:n_fem,t]==2)
+      # breeders[t] <- sum(z[1:n_fem,t] > 6 & z[1:n_fem,t] < 10)
+      # breedersy[t] <- sum(y[1:n_fem,t] == 6 | y[1:n_fem,t] == 8 | y[1:n_fem,t] == 10)
+      # 
+      # yearlings_pred[t] <- sum(z_new[1:n_fem,t]==2)
+      # yearlings_predy[t] <- sum(y_new[1:n_fem,t]==2)
+      # breeders_pred[t] <- sum(z_new[1:n_fem,t] > 6 & z[1:n_fem,t] < 10)
+      # breeders_predy[t] <- sum(y_new[1:n_fem,t] == 6 | y_new[1:n_fem,t] == 8 | 
+      #                            y_new[1:n_fem,t] == 10)
+      
+    state_probs[i,t-1,1:12] <- getPHI_f(z = z[i,t-1], 
+                                      phiP = phiP[i,t-1], phi1 = phi1[i,t-1], phi2 = phi2[i,t-1], 
+                                      phi3 = phi3[i,t-1], phi4 = phi4[i,t-1], phi5 = phi5[i,t-1], 
+                                      phiB = phiB[i,t-1], phiNB = phiNB[i,t-1],
+                                      psi3 = psi3[i,t-1], psi4 = psi4[i,t-1],
+                                      psi5 = psi5[i,t-1], psiB = psiB[i,t-1], psiNB = psiNB[i,t-1])
+    
+    event_probs[i,t,1:11] <- getP_f(z = z[i,t], 
+                                    p1 = p1[i,t-1], p2 = p2[i,t-1], p3 = p3[i,t-1], 
+                                    p4 = p4[i,t-1], p5 = p5[i,t-1],
+                                    pB = pB[i,t-1], pNB = pNB[i,t-1], delB = delB[i,t-1])
+    
+    # state_probs_new[i,t-1,1:12] <- getPHI_f(z = z_new[i,t-1], 
+    #                                   phiP = phiP[i,t-1], phi1 = phi1[i,t-1], phi2 = phi2[i,t-1], 
+    #                                   phi3 = phi3[i,t-1], phi4 = phi4[i,t-1], phi5 = phi5[i,t-1], 
+    #                                   phiB = phiB[i,t-1], phiNB = phiNB[i,t-1],
+    #                                   psi3 = psi3[i,t-1], psi4 = psi4[i,t-1],
+    #                                   psi5 = psi5[i,t-1], psiB = psiB[i,t-1], psiNB = psiNB[i,t-1])
+    # 
+    # event_probs_new[i,t,1:11] <- getP_f(z = z_new[i,t], 
+    #                                 p1 = p1[i,t-1], p2 = p2[i,t-1], p3 = p3[i,t-1], 
+    #                                 p4 = p4[i,t-1], p5 = p5[i,t-1],
+    #                                 pB = pB[i,t-1], pNB = pNB[i,t-1], delB = delB[i,t-1])
+    
+    
+    } #t females
+} #i females
+    
+   for (i in 1:n_m) { #males
+    zm[i, fc_m[i]:fc_m[i]] <- 1
+    # zm_new[i, fc_m[i]:fc_m[i]] <- 1
+    
+  for (t in (fc_m[i] + 1):n_occasions) {
+    zm[i,t] ~ dcat(state_probs_m[i, t-1, 1:8])
+    ym[i,t] ~ dcat(event_probs_m[i,t,1:8])
+    
+    state_probs_m[i,t-1,1:8] <- getPHI_m(z = zm[i,t-1], 
+                                      phiPM = phiPM[i,t-1], phi1M = phi1M[i,t-1], phi2M = phi2M[i,t-1], 
+                                      phi3M = phi3M[i,t-1], phi4M = phi4M[i,t-1], phi5M = phi5M[i,t-1], 
+                                      phiBM = phiBM[i,t-1])
+    event_probs_m[i,t,1:8] <- getP_m(z = zm[i,t], 
+                                    p1M = p1M[i,t-1], p2M = p2M[i,t-1], p3M = p3M[i,t-1], 
+                                    p4M = p4M[i,t-1], p5M = p5M[i,t-1],
+                                    pBM = pBM[i,t-1])
+    
+    } #t
+   } #i
+    
+}) # mod   
+
+ 
+#data
+nim.data <- list(y = y, ym = ym, 
+                # Q = matrix(c(1,-2,1,0,0,0,
+                #              -2,5,-4,1,0,0,
+                #              1,-4,6,-4,1,0,
+                #              0,1,-4,6,-4,1,
+                #              0,0,1,-4,5,-2,
+                #              0,0,0,1,-2,1), ncol = 6, nrow = 6, byrow = T),
+                 z = z.st, zm = z.st.m)
+
+nim.constants <- list(n_fem = dim(ch_fem)[1], n_m = dim(ch_m)[1], n_occasions = n_occasions,
+                      resights = res_mat, 
+                      # eff = eff,
+                      fc = fc, fc_m = fc_m)
+
+inits <- list(int.phiA = 0.9, int.phiAM = 0.9,
+              int.psi3 = 0.05, int.psi4 = 0.3, int.psi5 = 0.15, 
+              int.psiB = 0.9, int.psiNB = 0.20,
+              mean.pAM = 0.8, mean.p5M = 0.6,
+              # mu.phi = rep(qlogis(0.9),6), mu.phiM = rep(qlogis(0.9),6),
+  z = z.init, zm = z.init.m)
+
+### parameters
+params <- c('int.p1', 'int.p2', 'int.p3', 'int.p4', 'int.p5', 'int.pA', 
+            'int.p1M', 'int.p2M', 'int.p3M', 'int.p4M', 'int.p5M', 'int.pAM', 
+            "int.psi3", 'int.psi4', 'int.psi5', 'int.psiB', 'int.psiNB', 
+            'nat_all', 'nat4', 'nat5', 'nat6plus', 'int.phiA', 'int.phiAM', 
+            # 'yearlings', 'yearlings_pred',  'yearlingsy', 'yearlings_predy',
+            # 'breeders', 'breeders_pred', 'breedersy', 'breeders_predy',
+            # 'yearlingsM', 'yearlingsMy', 'yearlingsM_pred', 'yearlingsM_predy',
+            # 'twosM', 'twosMy', 'twosM_predy', 'twosM_pred',
+            'b.delB', 'p.delB', #'b.delBM', 'p.delBM', 
+            # 'mu.phi', 'mu.phiM', 
+            'mu.phiP', 'mu.phi1', 'mu.phi2', 'mu.phi3', 'mu.phi4', 'mu.phi5',
+            'mu.phiPM', 'mu.phi1M', 'mu.phi2M', 'mu.phi3M', 'mu.phi4M', 'mu.phi5M',
+            'int.phiP', 'int.phi1', 'int.phi2', 'int.phi3', 'int.phi4', 'int.phi5',
+            'int.phiPM', 'int.phi1M', 'int.phi2M', 'int.phi3M', 'int.phi4M', 'int.phi5M',
+            # 'tau.phiM',  'sigma.phiM', 'tau.phi',  'sigma.phi',
+            'z', 'zm', #'y_new', 'ym_new', #monitor z for WAIC, y and y_new for bayesian p
+            'mu.A', 'mu.AM')
+
+### run model
+# n.iter = 700; n.chains = 3; n.burnin = 100; nthin = 1; nAdapt = 10
+# n.iter = 15000; n.chains = 3; n.burnin = 8000; nthin = 1; nAdapt = 10
+n.iter = 10000; n.chains = 3; n.burnin = 5000; nthin = 1; nAdapt = 10
+
+start <- Sys.time()
+
+Rmodel <- nimbleModel(code = SSL_CJS, 
+                      constants = nim.constants, data = nim.data, 
+                      calculate = F, check = F, inits = inits)
+
+# Rmodel$y #returns data
+# Rmodel$simulate('z[1, 4]')
+# Rmodel$calculate('mean.p1')
+
+# Rmodel$calculate(c('y', 'y_new'))
+# Rmodel$simulate(c('y'))
+# Rmodel$y
+# 
+# Rmodel$logProb_y
+# Rmodel$logProb_y_new
+
+conf <- configureMCMC(Rmodel, monitors = params, control = list(adaptInterval = nAdapt), 
+                      thin = nthin, useConjugacy = FALSE, enableWAIC = TRUE)
+
+# CV_out <- runCrossValidate(conf, 4, MCMCcontrol = list(niter = n.iter, nburnin = n.burnin))
+
+Rmcmc <- buildMCMC(conf)  #produce uncompiled R mcmc function
+# Rmcmc <- buildMCMC(conf)
+Cmodel <- compileNimble(Rmodel)
+Cmcmc <- compileNimble(Rmcmc, project = Rmodel)
+
+# st2<-Sys.time()
+out <- runMCMC(Cmcmc, niter = n.iter, nburnin = n.burnin, nchains = n.chains, inits = inits,
+                 setSeed = FALSE, progressBar = TRUE,
+               WAIC = TRUE,
+               samplesAsCodaMCMC = TRUE)
+
+# elapsed <- Sys.time()-start
+
+# saveRDS(out, here::here('results', 'out_null_west.rds'))
+
+#diagnostics
+
+all_pars <- colnames(out$samples$chain1)
+noZ <- all_pars[which(!grepl('z', all_pars))]
+rhats <- gelman.diag(out$samples[,noZ], multivariate=F, autoburnin=F)
+# traceplot(out$samples[,noZ[1:37]])
+
+traceplot(out$samples[,grepl('psi', noZ)])
+ 
+# max_rhat <- max(rhats$psrf[,1], na.rm = T)
+
+# effectiveSize(out[,params])
+
+```
+
