@@ -14,6 +14,8 @@ library(Hmisc)
 library(lubridate)
 library(coda)
 library(readr)
+library(ggh4x) #nested faceting
+library(latex2exp) #TeX
 
 plot_theme <- function(...) {
   theme(
@@ -46,8 +48,6 @@ colnames(brands_table) <- gsub('X', '', colnames(brands_table))
 #### posteriors and posterior summaries: null model ####
 
 #west
-# west_out <- readRDS(here::here('results', paste0('out_null_west.rds')))
-# west_out <- readRDS(here::here('results', paste0('out_null_west2018dat.rds')))
 west_out <- readRDS(here::here('results', paste0('out_null_west_car.rds')))
 all_pars <- colnames(west_out$samples$chain1)
 noZ <- all_pars[which(!grepl('z', all_pars))]
@@ -115,7 +115,6 @@ nat <- post_sum_e[grepl('nat', row.names(post_sum_e)),]
 
 nat.vals.e <- nat %>%
   filter(!is.na(med)&med>0) %>% #filter out years when the value wasn't calculable in the model
-  #this is silly and ugly but oh well -- replacing the periods with brackets 
   transform(variable = gsub('nat4.', 'nat4[', variable)) %>%
   transform(variable = gsub('nat5.', 'nat5[', variable)) %>%
   transform(variable = gsub('nat6plus.', 'nat6plus[', variable)) %>%
@@ -131,9 +130,7 @@ nat.vals.e <- nat %>%
 vars <- c('mu.phi[1]', 'mu.phi[2]', 'mu.phi[3]', 'mu.phi[4]', 'mu.phi[5]', 'mu.phi[6]',
           'mu.phiM[1]', 'mu.phiM[2]', 'mu.phiM[3]', 'mu.phiM[4]', 'mu.phiM[5]', 'mu.phiM[6]',
           'mu.A', 'mu.AM')
-# vars <- c('mu.phiP', 'mu.phi1', 'mu.phi2', 'mu.phi3', 'mu.phi4', 'mu.phi5',
-#           'mu.phiPM', 'mu.phi1M', 'mu.phi2M', 'mu.phi3M', 'mu.phi4M', 'mu.phi5M',
-#           'mu.A', 'mu.AM')
+
 mean.dem <- post_sum_w[vars,]
 
 library(stringr)
@@ -163,12 +160,6 @@ p.vals.w <- mean.dem %>%
                          ifelse(age == 'BM', 'A', sub('M', '', age)))) %>%
   transform(Region = 'Western')
 
-##combine and write csv for IPM
-# dem.rates <- bind_rows(psi.vals.w, phi.vals.w, psi.vals.e, phi.vals.e)
-# write.csv(dem.rates, file = paste('/Users', 'awarlick', 'Documents', 'SAFS', 
-#                                    'SSL_IPM', 'data', 'ProcData', 'dem.rates.csv', sep = '/'),
-#           row.names = F)
-
 ## natality -- west
 nat <- post_sum_w[grepl('nat', row.names(post_sum_w)),]
 
@@ -190,7 +181,8 @@ psi.vals <- bind_rows(psi.vals.w, psi.vals.e) %>%
 
 p.vals <- bind_rows(p.vals.w, p.vals.e) %>%
   transform(age = factor(age, levels = c('1', '2', '3', '4', '5', 'B', 'NB', 'A'),
-                         labels = c('1', '2', '3', '4', '5', 'Breeder', 'Non-breeder', 'Adult'))) 
+                         labels = c('1', '2', '3', '4', '5', 'Breeder', 'Non-breeder', 'Adult'))) %>%
+  transform(age_label = factor(age, labels = c('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h')))
 
 nat.vals <- bind_rows(nat.vals.w, nat.vals.e) %>%
   transform(age = ifelse(variable == 'nat4', '4', 
@@ -199,7 +191,6 @@ nat.vals <- bind_rows(nat.vals.w, nat.vals.e) %>%
 
 #null model vital rates table
 phi_tab <- phi.vals %>%
-  # transform(age = ifelse(age %in% c('Breeder', 'Non-breeder'), 'Adult', age)) %>%
   filter(grepl('int.phi', variable)) %>%
   transform(med_e = round(med, 2), lower = round(lower,2), upper = round(upper,2)) %>%
   transform(CI_e = paste0(lower, '-', upper)) %>% 
@@ -218,7 +209,6 @@ phi_tab <- phi.vals %>%
                                  '$\\phi_{A_M}$'))) %>%
   dplyr::select(age, Parameter, med_e, CI_e) %>% 
   merge(phi.vals %>%
-          # transform(age = ifelse(age %in% c('Breeder', 'Non-breeder'), 'Adult', age)) %>%
           filter(grepl('mu.', variable)) %>%
           transform(med_w = round(med, 2), lower = round(lower,2), upper = round(upper,2)) %>%
           transform(CI_w = paste0(lower, '-', upper)) %>% 
@@ -284,18 +274,6 @@ ggplot(phi.vals.w, aes(variable, med), col = Region, group = Region) +
   facet_wrap(~Sex, scales = 'free') +
   scale_y_continuous(limits = c(0,1)) +
   scale_color_manual(values = c('black', 'grey65'))
-# 
-# ggplot(phi.vals.w, aes(age, med), col = Region, group = Region) +
-#   geom_linerange(aes(ymin = lower, ymax = upper, col = Region, group = Region), 
-#                  position = position_dodge(0.5), size = 0.5) +
-#   geom_point(aes(col = Region, group = Region), position = position_dodge(0.5), size = 0.8) +
-#   ylab(expression(paste('Survival Probability', ' ', (phi)))) + xlab('Age class') +
-#   plot_theme(legend.position = 'top', legend.title = element_blank(),
-#              panel.border = element_rect(fill = NA)) +
-#   ggtitle('') +
-#   facet_wrap(~Sex, scales = 'free') +
-#   scale_y_continuous(limits = c(0,1)) +
-#   scale_color_manual(values = c('black', 'grey65'))
 
 psi_plot <- ggplot(psi.vals, aes(age, med), col = Region, group = Region) +
   geom_linerange(aes(ymin = lower, ymax = upper, col = Region, group = Region), 
@@ -307,16 +285,121 @@ psi_plot <- ggplot(psi.vals, aes(age, med), col = Region, group = Region) +
   scale_y_continuous(limits = c(0,1)) +
   scale_color_manual(values = c('black', 'grey65'))
 
-p_plot <- ggplot(p.vals, aes(age, med), col = Region, group = Region) +
+#new figure combining phi and psi intercepts
+psi.phi.vals <- bind_rows(phi.vals, psi.vals) %>%
+  transform(type = ifelse(grepl('psi', variable), 'Pupping', 'Survival')) %>%
+  transform(type = factor(type, levels = c('Survival', 'Pupping'))) %>%
+  transform(Sex = ifelse(type == 'Pupping', 'Female', Sex)) %>%
+  transform(var_name = factor(variable, 
+              levels = c('int.phiP', 'int.phiPM', 'int.phi1', 'int.phi1M', 'int.phi2', 'int.phi2M', 
+                         'int.phi3', 'int.phi3M', 'int.phi4', 'int.phi4M', 'int.phi5', 'int.phi5M', 
+                         'int.phiB', 'int.phiNB', 'int.phiBM',
+                         'mu.phi[1]', 'mu.phi[2]', 'mu.phi[3]', 'mu.phi[4]', 'mu.phi[5]', 'mu.phi[6]', 'mu.A',
+                         'mu.phiM[1]', 'mu.phiM[2]', 'mu.phiM[3]', 'mu.phiM[4]', 'mu.phiM[5]', 'mu.phiM[6]', 'mu.AM',
+                         'int.psi3', 'int.psi4', 'int.psi5', 'int.psiB', 'int.psiNB'),
+              labels = c('a', 'a', 'b', 'b', 'c', 'c', 'd', 'd', 'e', 'e', 'f', 'f', 
+                         'g', 'h', 'i',
+                         'a', 'b', 'c', 'd', 'e', 'f', 'i', 'a', 'b', 'c', 'd', 'e', 'f', 'i',
+                         'k', 'l', 'm', 'n', 'o')))
+  
+psi.phi.plot <- ggplot(psi.phi.vals, aes(var_name, med), col = Region, group = Region) +
+  geom_errorbar(aes(ymin = lower, ymax = upper, col = Region, group = Region), 
+                 position = position_dodge(0.5), width = 0.4) +
+  geom_point(aes(col = Region, group = Region), position = position_dodge(0.5), size = 0.8) +
+  ylab(expression(paste('Probability'))) + xlab('Parameter') +
+  plot_theme_x180(legend.position = 'top', legend.title = element_blank(),
+             panel.border = element_rect(fill = NA)) +
+  ggtitle('') +
+  facet_nested(~type + Sex, scales = 'free') +
+  scale_y_continuous(limits = c(0,1)) +
+  scale_color_manual(values = c('black', 'grey65')) +
+  scale_x_discrete(labels = c('a' = parse(text = TeX('$phi_{Pup}')), 
+                              'b' = parse(text = TeX('$phi_{1}')),
+                              'c' = parse(text = TeX('$phi_{2}')), 
+                              'd' = parse(text = TeX('$phi_{3}')), 
+                              'e' = parse(text = TeX('$phi_{4}')), 
+                              'f' = parse(text = TeX('$phi_{5}')), 
+                              'g' = parse(text = TeX('$phi_{B}')), 
+                              'h' = parse(text = TeX('$phi_{N}')), 
+                              'i' = parse(text = TeX('$phi_{A}')), 
+                              'k' = parse(text = TeX('$psi_{3B}')), 
+                              'l' = parse(text = TeX('$psi_{4B}')), 
+                              'm' = parse(text = TeX('$psi_{5B}')), 
+                              'n' = parse(text = TeX('$psi_{BB}')), 
+                              'o' = parse(text = TeX('$psi_{NB}$'))))
+
+#presentation
+ggplot(psi.phi.vals %>% filter(variable %nin% c('int.psiNB', 'int.psi5') & type == 'Survival'), 
+       aes(var_name, med), col = Region, group = Region) +
   geom_linerange(aes(ymin = lower, ymax = upper, col = Region, group = Region), 
                  position = position_dodge(0.5), size = 0.5) +
   geom_point(aes(col = Region, group = Region), position = position_dodge(0.5), size = 0.8) +
+  ylab(expression(paste('Probability'))) + xlab('Age group') +
+  pres_theme(legend.position = 'top', legend.title = element_blank(), 
+             plot.margin = unit(c(0,1,0.75,0.75), 'cm')) +
+  ggtitle('') +
+  facet_nested(~type + Sex, scales = 'free', space = 'free', drop = T) +
+  scale_y_continuous(limits = c(0,1)) +
+  scale_color_manual(values = c('dodgerblue2', 'limegreen')) +
+  scale_x_discrete(labels = c('a' = parse(text = TeX('$phi_{Pup}')), 
+                              'b' = parse(text = TeX('$phi_{1}')),
+                              'c' = parse(text = TeX('$phi_{2}')), 
+                              'd' = parse(text = TeX('$phi_{3}')), 
+                              'e' = parse(text = TeX('$phi_{4}')), 
+                              'f' = parse(text = TeX('$phi_{5}')), 
+                              'g' = parse(text = TeX('$phi_{B}')), 
+                              'h' = parse(text = TeX('$phi_{NB}')), 
+                              'i' = parse(text = TeX('$phi_{A}')), 
+                              'k' = parse(text = TeX('$psi_{3B}')), 
+                              'l' = parse(text = TeX('$psi_{4B}')), 
+                              'm' = parse(text = TeX('$psi_{5B}')), 
+                              'n' = parse(text = TeX('$psi_{BB}')), 
+                              'o' = parse(text = TeX('$psi_{NB}$'))))
+
+ggplot(psi.phi.vals, 
+       aes(var_name, med), col = Region, group = Region) +
+  geom_linerange(aes(ymin = lower, ymax = upper, col = Region, group = Region), 
+                 position = position_dodge(0.5), size = 0.5) +
+  geom_point(aes(col = Region, group = Region), position = position_dodge(0.5), size = 0.8) +
+  ylab(expression(paste('Probability'))) + xlab('Age group') +
+  pres_theme(legend.position = 'top', legend.title = element_blank(), 
+             plot.margin = unit(c(0,1,0.75,0.75), 'cm')) +
+  ggtitle('') +
+  # facet_nested(~type + Sex, scales = 'free', space = 'free', drop = T) +
+  scale_y_continuous(limits = c(0,1)) +
+  scale_color_manual(values = c('dodgerblue2', 'limegreen')) +
+  scale_x_discrete(labels = c('a' = parse(text = TeX('$phi_{Pup}')), 
+                              'b' = parse(text = TeX('$phi_{1}')),
+                              'c' = parse(text = TeX('$phi_{2}')), 
+                              'd' = parse(text = TeX('$phi_{3}')), 
+                              'e' = parse(text = TeX('$phi_{4}')), 
+                              'f' = parse(text = TeX('$phi_{5}')), 
+                              'g' = parse(text = TeX('$phi_{B}')), 
+                              'h' = parse(text = TeX('$phi_{N}')), 
+                              'i' = parse(text = TeX('$phi_{A}')), 
+                              'k' = parse(text = TeX('$psi_{3B}')), 
+                              'l' = parse(text = TeX('$psi_{4B}')), 
+                              'm' = parse(text = TeX('$psi_{5B}')), 
+                              'n' = parse(text = TeX('$psi_{BB}')), 
+                              'o' = parse(text = TeX('$psi_{NB}$'))))
+p_plot <- ggplot(p.vals, aes(age_label, med), col = Region, group = Region) +
+  geom_errorbar(aes(ymin = lower, ymax = upper, col = Region, group = Region), 
+                 position = position_dodge(0.5), width = 0.25) +
+  geom_point(aes(col = Region, group = Region), position = position_dodge(0.5), size = 0.8) +
   ylab('Detection Probability') + xlab('') +
-  plot_theme(legend.position = 'top', panel.border = element_rect(fill = NA),
+  plot_theme_x180(legend.position = 'top', panel.border = element_rect(fill = NA),
              legend.title = element_blank()) +
   facet_wrap(~Sex, scales = 'free') +
   scale_y_continuous(limits = c(0,1)) +
-  scale_color_manual(values = c('black', 'grey65'))
+  scale_color_manual(values = c('black', 'grey65')) +
+  scale_x_discrete(labels = c('a' = parse(text = TeX('$p_{1}')), 
+                            'b' = parse(text = TeX('$p_{2}')),
+                            'c' = parse(text = TeX('$p_{3}')), 
+                            'd' = parse(text = TeX('$p_{4}')), 
+                            'e' = parse(text = TeX('$p_{5}')), 
+                            'f' = parse(text = TeX('$p_{B}')), 
+                            'g' = parse(text = TeX('$p_{N}')), 
+                            'h' = parse(text = TeX('$p_{A}'))))
 
 nat_plot <- ggplot(nat.vals %>% filter(age != 'all'), 
                    aes(year, med, group = Region, color = Region)) +
@@ -330,19 +413,7 @@ nat_plot <- ggplot(nat.vals %>% filter(age != 'all'),
   scale_color_manual(values = c('black', 'grey65')) +
   scale_x_continuous(breaks = c(seq(5, 19, by = 2)), labels = c(seq(2004, 2018, by = 2)))
 
-#### time-varying predictions: 
-# use full model, chose entire non-breeding season covariates #####
-# east_out <- readRDS(here::here('results', paste0('out_full_east_NB.rds')))
-# 
-# all_pars <- colnames(east_out$samples$chain1)
-# noZ <- all_pars[which(!grepl('z', all_pars))]
-# 
-# outmat_east <- as.matrix(east_out$samples)
-# posts_east_t <- outmat_east[,noZ]
-# # 
-# write.csv(posts_east_t, file = here::here('results', 'posts_east_t.csv'),
-#           row.names = F)
-
+#### time-varying estimates 
 posts_east_t <- read.csv(file = here::here('results', 'posts_east_t.csv'), header = T, stringsAsFactors = F)
 
 post_sum_t <- data.frame(
@@ -357,8 +428,6 @@ tvary <- post_sum_t[tvary.vars,]
 phi_t_vals <- tvary %>%
   transform(group = ifelse(grepl('psi', variable), 'Breeding', 'Survival')) %>%
   filter(!is.na(med) & med>0 & group == 'Survival') %>%
-  #this is not graceful, but I had already done the regex for when there were brackets rather
-  #than the periods from writing and then reading back in the csv files
   transform(variable = gsub('prob.', 'prob[', variable)) %>%
   transform(variable = substr(variable, 1,nchar(variable)-1)) %>%
   transform(variable = paste0(variable, ']')) %>%
@@ -377,37 +446,22 @@ phi_t_vals <- phi_t_vals %>% filter(sex == 'Female') %>%
   group_by(variable, year) %>%
   dplyr::summarize(med = mean(med), lower = mean(lower), upper = mean(upper), .groups = 'keep') %>%
   transform(variable = factor(variable, levels = c('P', '1', '2', 'PB', 'B', 'NB'),
-                              labels = c('Pup', '1', '2', 'Juvenile', 'Breeding adult', 
-                                         'Non-breeding adult'))) 
+                              labels = c('phi[Pup]', 'phi[1]', 'phi[2]', 'phi[3:5]', 'phi[B]', 
+                                         'phi[N]'))) 
 
 #dots and CIs
 phi_t_plot <- ggplot(phi_t_vals, aes(year, med, group = variable)) +
   geom_errorbar(aes(x = year, ymin=lower, ymax=upper), show.legend = F, width = 0.5) +
   geom_point(size = 0.8) + geom_line(size = 0.7) +
-  xlab('') + ylab(expression(paste('Predicted survival probability ',  '(', phi, ')'))) +
+  xlab('') + ylab(expression(paste('Survival probability ',  '(', phi, ')'))) +
   ggtitle('') +
   # facet_grid(sex~variable) +
-  facet_grid(~variable) +
+  facet_grid(~variable, labeller = label_parsed) +
   plot_theme(legend.position = 'none', panel.border = element_rect(fill = NA),
              plot.title = element_text(hjust = 0.5)) +
   guides(color = guide_legend("", nrow = 1, byrow = T)) +
   scale_color_manual(values = rainbow2) +
   scale_x_continuous(breaks = c(seq(1, 19, by = 2)), labels = c(seq(2000, 2018, by = 2)))
-
-#ribbons and lines
-# phi_t_plot <- ggplot(phi_t_vals, aes(year, med, color = variable, group = variable)) +
-#   geom_ribbon(aes(ymin=lower, ymax=upper, fill = variable), show.legend = F,
-#               alpha=0.1, col = NA) +
-#   geom_line(size = 0.8) +
-#   xlab('') + ylab(expression(paste('Predicted survival probability ',  '(', phi, ')'))) +
-#   ggtitle('') +
-#   facet_wrap(~sex) +
-#   plot_theme(legend.position = 'top', panel.border = element_rect(fill = NA),
-#              plot.title = element_text(hjust = 0.5)) +
-#   guides(color = guide_legend("", nrow = 1, byrow = T)) +
-#   scale_color_manual(values = rainbow2) +
-#   scale_fill_manual(values = rainbow2) +
-#   scale_x_continuous(breaks = c(seq(1, 19, by = 2)), labels = c(seq(2000, 2018, by = 2)))
 
 #breeding probabilities
 psi_t_vals <- tvary %>%
@@ -422,14 +476,14 @@ psi_t_vals <- tvary %>%
   transform(variable = sub('.prob', '', variable)) %>%
   transform(variable = gsub('psi', '', variable)) %>%
   transform(variable = factor(variable, levels = c('3', '4', '5', 'B', 'NB'),
-                              labels = c('4', '5', '6', 'B | B', 'B | NB')))
+                              labels = c('psi[`3B`]', 'psi[`4B`]', 'psi[`5B`]', 'psi[BB]', 'psi[NB]')))
 
 psi_t_plot <- ggplot(psi_t_vals, aes(year, med, group = variable)) +
   geom_errorbar(aes(x = year, ymin=lower, ymax=upper), width = 0.5, show.legend = F) +
   geom_point(size = 0.8) + geom_line(size = 0.7) +
-  xlab('') + ylab(expression(paste('Predicted pupping probability ',  '(', psi, ')'))) +
+  xlab('') + ylab(expression(paste('Pupping probability ',  '(', psi, ')'))) +
   ggtitle('') +
-  facet_grid(~variable) +
+  facet_grid(~variable, labeller = label_parsed) +
   plot_theme(legend.position = 'none', panel.border = element_rect(fill = NA),
              plot.title = element_text(hjust = 0.5)) +
   guides(color = guide_legend("", nrow = 1, byrow = T)) +
@@ -472,11 +526,6 @@ p_t_plot <- ggplot(p_t_vals,
   plot_theme(legend.position = 'top', panel.border = element_rect(fill = NA),
              plot.title = element_text(size = 55)) +
   scale_x_continuous(breaks = c(seq(0, 18, by = 2)), labels = c(seq(2000, 2018, by = 2)))
-
-#old ribbons and detection
-# time_vary_plot <- plot_grid(phi_t_plot, plot_grid(psi_t_plot, p_t_plot, labels = c('(b)', '(c)'), 
-#                                              label_size = 10, rel_heights = c(1,1)), 
-#                             labels = c('(a)', ''), label_size = 10, nrow = 2)
 
 #new error bars and points; no detection
 time_vary_plot <- plot_grid(phi_t_plot, psi_t_plot, labels = c('(a)', '(b)'),
@@ -586,25 +635,75 @@ bmi_dat <- cov_dat %>% filter(grepl('mass', variable)) %>%
   transform(sex = ifelse(variable %in% c('b.massPM', 'b.mass1M'), 'Male', 'Female')) %>%
   transform(age = factor(age, levels = c('P', '1-2','First time','Repeat'),
                          labels = c('Pup survival', 'Young survival', 
-                                    'First time pupping', 'Repeat pupping'))) %>%
+                                    'First pupping', 'Repeat pupping'))) %>%
   transform(Region = factor(Region, levels = c('east', 'west'), 
-                            labels = c('Eastern', 'Western')))
-bmi_plot <- ggplot(bmi_dat %>% filter(age != 'Repeat pupping'), 
-                   aes(age, med, col = sex, group = sex)) +
-  geom_linerange(aes(ymin = lower, ymax = upper), size = 0.5, position = position_dodge(width = 0.5)) +
-  geom_point(aes(), position = position_dodge(width = 0.5), size = 0.8) +
-  geom_hline(yintercept = 0, linetype = 'dotted') +
-  facet_grid(~Region) +
-  ylab(expression(paste('Logit-scale effect of pup mass'))) + xlab('') +
-  plot_theme(legend.position = 'top', panel.border = element_rect(fill = NA),
-             legend.title = element_blank()) +
-  # scale_color_manual(values = rainbow2[c(2,5)])
-  scale_color_manual(values = c('black', 'grey65'))
+                            labels = c('Eastern', 'Western'))) %>%
+  transform(exc = ifelse(grepl('psi', variable) & Region == 'Western', 'Y', 'N'))
+
 
 #effect of env conditions -- east
-env_dat_e <- cov_dat %>% filter(Region == 'east' & !grepl('mass', variable)) %>%
+# env_dat_e <- cov_dat %>% filter(Region == 'east' & !grepl('mass', variable)) %>%
+#   transform(age = ifelse(grepl('P', variable), 'P', ifelse(grepl('1', variable), '1-2',  
+#                                                            ifelse(grepl('psiB', variable), 'Repeat', 'First time')))) %>%
+#   transform(Season = factor(Season, levels = c('sum', 'fall', 'win', 'spr'),
+#                             labels = c('Summer', 'Fall', 'Winter', 'Spring'))) %>%
+#   transform(age = factor(age, levels = c('P', '1-2', 'First time', 'Repeat'),
+#                          labels = c('Pup survival', 'Young survival',
+#                                     'First pupping', 'Repeat pupping'))) %>%
+#   transform(var_name = ifelse(grepl('chla', variable), 'Chlorophyll', 
+#                               ifelse(grepl('AOI', variable), 'Arctic Oscillation Index',
+#                                      ifelse(grepl('albsa', variable), 'Aleutian low', 
+#                                             ifelse(grepl('npgo', variable), 'North Pacific Gyre Oscillation',
+#                                                    ifelse(grepl('up', variable), 'Upwelling', 'Northward wind')))))) %>%
+#   transform(var_name = factor(var_name, levels = c('Aleutian low', 'Arctic Oscillation Index', 'North Pacific Gyre Oscillation',
+#                                                    'Chlorophyll', 'Northward wind', 'Upwelling'),
+#                               labels = c('Aleutian low', 'Arctic Oscillation Index', 'North Pacific Gyre Oscillation',
+#                                          'Chlorophyll', 'Northward wind', 'Upwelling')))
+# 
+# env_east_plot <- ggplot(env_dat_e, aes(x = age, y = med), col = Season, group = Season) +
+#   geom_linerange(aes(ymin = lower, ymax = upper, col = Season, group = Season),
+#                  position = position_dodge(0.5), size = 0.5) +
+#   geom_point(aes(x = age, y = med, col = Season, group = Season), size = 0.8, 
+#              position = position_dodge(0.5)) +
+#   geom_hline(yintercept = 0, linetype = 'dotted') +
+#   ylab(expression(paste('Logit-scale effect of environmental variable'))) + xlab('') +
+#   plot_theme(legend.position = 'top', panel.border = element_rect(fill = NA),
+#              legend.title = element_blank()) +
+#   facet_wrap(~var_name) +
+#   scale_color_manual(values = rainbow2[-c(1,4)])
+# 
+# #effect of env conditions -- west
+# env_dat_w <- cov_dat %>% filter(Region == 'west' & !grepl('mass', variable)) %>%
+#   transform(age = ifelse(grepl('P', variable), 'P', ifelse(grepl('1', variable), '1-2',  
+#                                                            ifelse(grepl('psiB', variable), 'Repeat', 'First time')))) %>%
+#   transform(Season = factor(Season, levels = c('sum', 'fall', 'win', 'spr'),
+#                             labels = c('Summer', 'Fall', 'Winter', 'Spring'))) %>%
+#   transform(age = factor(age, levels = c('P', '1-2', 'First time', 'Repeat'),
+#                          labels = c('Pup survival', 'Young survival',
+#                                     'First pupping', 'Repeat pupping'))) %>%
+#   transform(var_name = ifelse(grepl('AOI', variable), 'AOI', 
+#                               ifelse(grepl('npgo', variable), 'NPGO',
+#                                       ifelse(grepl('up', variable), 'Upwelling', 'Wind')))) %>%
+#   transform(var_name = factor(var_name, levels = c('AOI', 'NPGO', 'Wind', 'Upwelling'),
+#                               labels = c('Arctic Oscillation Index', 'North Pacific Gyre Oscillation', 
+#                                          'Northward wind', 'Upwelling')))
+# 
+# env_west_plot <- ggplot(env_dat_w, aes(age, med), col = Season, group = Season) +
+#   geom_linerange(aes(ymin = lower, ymax = upper, col = Season, group = Season), 
+#                  position = position_dodge(0.5), size = 0.5) +
+#   geom_point(aes(col = Season, group = Season), position = position_dodge(0.5), size = 0.8) +
+#   geom_hline(yintercept = 0, linetype = 'dotted') +
+#   ylab(expression(paste('Logit-scale effect of environmental variable'))) + xlab('') +
+#   plot_theme(legend.position = 'top', panel.border = element_rect(fill = NA),
+#              legend.title = element_blank()) +
+#   facet_wrap(~var_name) +
+#   scale_color_manual(values = rainbow2[-c(1,4)])
+
+#combined, rotated effect of covariates
+cov_dat_all <- cov_dat %>%
   transform(age = ifelse(grepl('P', variable), 'P', ifelse(grepl('1', variable), '1-2',  
                                                            ifelse(grepl('psiB', variable), 'Repeat', 'First time')))) %>%
+  transform(Season = ifelse(grepl('mass', variable), NA, Season)) %>%
   transform(Season = factor(Season, levels = c('sum', 'fall', 'win', 'spr'),
                             labels = c('Summer', 'Fall', 'Winter', 'Spring'))) %>%
   transform(age = factor(age, levels = c('P', '1-2', 'First time', 'Repeat'),
@@ -613,50 +712,74 @@ env_dat_e <- cov_dat %>% filter(Region == 'east' & !grepl('mass', variable)) %>%
   transform(var_name = ifelse(grepl('chla', variable), 'Chlorophyll', 
                               ifelse(grepl('AOI', variable), 'Arctic Oscillation Index',
                                      ifelse(grepl('albsa', variable), 'Aleutian low', 
-                                            ifelse(grepl('npgo', variable), 'North Pacific Gyre Oscillation',
-                                                   ifelse(grepl('up', variable), 'Upwelling', 'Northward wind')))))) %>%
-  transform(var_name = factor(var_name, levels = c('Aleutian low', 'Arctic Oscillation Index', 'North Pacific Gyre Oscillation',
-                                                   'Chlorophyll', 'Northward wind', 'Upwelling'),
-                              labels = c('Aleutian low', 'Arctic Oscillation Index', 'North Pacific Gyre Oscillation',
-                                         'Chlorophyll', 'Northward wind', 'Upwelling')))
+                                            ifelse(grepl('npgo', variable), 'NPGO',
+                                                   ifelse(grepl('up', variable), 'Upwelling', 
+                                                          ifelse(grepl('mass', variable), 'Pup mass', 'Northward wind'))))))) %>%
+  transform(var_name = factor(var_name, levels = c('Aleutian low', 'Arctic Oscillation Index', 'NPGO',
+                                                   'Chlorophyll', 'Northward wind', 'Upwelling', 'Pup mass'),
+                              labels = c('Aleutian low', 'Arctic Oscillation Index', 'NPGO',
+                                         'Chlorophyll', 'Northward wind', 'Upwelling', 'Pup mass'))) %>%
+  transform(Region = factor(Region, levels = c('east', 'west'), labels = c('Eastern', 'Western')))
 
-env_east_plot <- ggplot(env_dat_e, aes(x = age, y = med), col = Season, group = Season) +
+env_plot_all <- ggplot(cov_dat_all %>% filter(var_name != 'Pup mass'), aes(x = age, y = med), col = Season, group = Season) +
   geom_linerange(aes(ymin = lower, ymax = upper, col = Season, group = Season),
                  position = position_dodge(0.5), size = 0.5) +
   geom_point(aes(x = age, y = med, col = Season, group = Season), size = 0.8, 
              position = position_dodge(0.5)) +
   geom_hline(yintercept = 0, linetype = 'dotted') +
-  ylab(expression(paste('Logit-scale effect of environmental variable'))) + xlab('') +
+  coord_flip() + 
+  ylab(expression(paste('Logit-scale effect of covariate'))) + xlab('') +
   plot_theme(legend.position = 'top', panel.border = element_rect(fill = NA),
              legend.title = element_blank()) +
-  facet_wrap(~var_name) +
+  facet_grid(Region ~ var_name, drop = T, space = 'free', scales = 'free') +
   scale_color_manual(values = rainbow2[-c(1,4)])
 
-#effect of env conditions -- west
-env_dat_w <- cov_dat %>% filter(Region == 'west' & !grepl('mass', variable)) %>%
-  transform(age = ifelse(grepl('P', variable), 'P', ifelse(grepl('1', variable), '1-2',  
-                                                           ifelse(grepl('psiB', variable), 'Repeat', 'First time')))) %>%
-  transform(Season = factor(Season, levels = c('sum', 'fall', 'win', 'spr'),
-                            labels = c('Summer', 'Fall', 'Winter', 'Spring'))) %>%
-  transform(age = factor(age, levels = c('P', '1-2', 'First time', 'Repeat'),
-                         labels = c('Pup survival', 'Young survival',
-                                    'First pupping', 'Repeat pupping'))) %>%
-  transform(var_name = ifelse(grepl('AOI', variable), 'AOI', 
-                              ifelse(grepl('npgo', variable), 'NPGO',
-                                      ifelse(grepl('up', variable), 'Upwelling', 'Wind')))) %>%
-  transform(var_name = factor(var_name, levels = c('AOI', 'NPGO', 'Wind', 'Upwelling'),
-                              labels = c('Arctic Oscillation Index', 'North Pacific Gyre Oscillation', 
-                                         'Northward wind', 'Upwelling')))
-
-env_west_plot <- ggplot(env_dat_w, aes(age, med), col = Season, group = Season) +
-  geom_linerange(aes(ymin = lower, ymax = upper, col = Season, group = Season), 
-                 position = position_dodge(0.5), size = 0.5) +
-  geom_point(aes(col = Season, group = Season), position = position_dodge(0.5), size = 0.8) +
+bmi_plot <- ggplot(bmi_dat %>% filter(exc == 'N'), aes(age, med, group = sex)) +
+  geom_linerange(aes(ymin = lower, ymax = upper), size = 0.5, position = position_dodge(width = 0.5)) +
+  geom_point(aes(), position = position_dodge(width = 0.5), size = 0.8) +
   geom_hline(yintercept = 0, linetype = 'dotted') +
-  ylab(expression(paste('Logit-scale effect of environmental variable'))) + xlab('') +
-  plot_theme(legend.position = 'top', panel.border = element_rect(fill = NA),
+  facet_grid(Region~sex, space = 'free', scales = 'free_y') + coord_flip() +
+  ylab(expression(paste('Logit-scale effect of pup mass'))) + xlab('') + ggtitle(' ') +
+  plot_theme(legend.position = 'none', panel.border = element_rect(fill = NA),
+             legend.title = element_blank(),
+             title = element_text(size = 30),
+             # axis.text.y = element_blank(),
+             axis.ticks.y = element_blank()) +
+  scale_y_continuous(limits = c(-1,1), breaks = c(-1,0,1))
+
+cov_plot_all <- plot_grid(env_plot_all, bmi_plot, rel_widths = c(0.75, 0.25))
+
+#presentation figures
+ggplot(bmi_dat %>% filter(exc == 'N') %>% filter(!grepl('psi', variable)), 
+       aes(age, med, color = Region)) +
+  geom_linerange(aes(ymin = lower, ymax = upper), size = 0.5, position = position_dodge(width = 0.5)) +
+  geom_point(aes(), position = position_dodge(width = 0.5), size = 1) +
+  geom_hline(yintercept = 0, linetype = 'dotted') +
+  facet_grid(~sex, space = 'free', scales = 'free_y') +
+  coord_flip() +
+  ylab(expression(paste('Logit-scale effect of pup mass'))) + xlab('') + ggtitle(' ') +
+  pres_theme(legend.position = 'top', 
+             legend.title = element_blank(),
+             title = element_text(size = 30),
+             axis.ticks.y = element_blank(),
+             plot.margin = unit(c(-.5,1,0.5,0.5), 'cm')) +
+  scale_color_manual(values = c('black', 'turquoise3')) +
+  scale_y_continuous(limits = c(-1,1), breaks = c(-1,0,1))
+
+ggplot(cov_dat_all %>% filter(var_name %nin% c('Pup mass', 'Chlorophyll', 'Northward wind',
+                                'Aleutian low')) 
+                              %>% filter(!grepl('psi', variable)),
+       aes(x = age, y = med), col = Season, group = Season) +
+  geom_linerange(aes(ymin = lower, ymax = upper, col = Season, group = Season),
+                 position = position_dodge(0.5), size = 0.5) +
+  geom_point(aes(x = age, y = med, col = Season, group = Season), size = 1, 
+             position = position_dodge(0.5)) +
+  geom_hline(yintercept = 0, linetype = 'dotted') +
+  coord_flip() + 
+  ylab(expression(paste('Logit-scale effect of covariate'))) + xlab('') +
+  pres_theme(legend.position = 'top', 
              legend.title = element_blank()) +
-  facet_wrap(~var_name) +
+  facet_grid(Region ~ var_name, drop = T, space = 'free') +
   scale_color_manual(values = rainbow2[-c(1,4)])
 
 #probability of greater/less than zero beta values
@@ -690,10 +813,10 @@ waic_tab <- waic_vals %>% filter(Region == 'east') %>%
   arrange(Region, delWAIC)
 
 
-##### supplemental info: singles variables #######
-season <- c('NB', 'spr', 'sum', 'fall', 'win')
-vars <- c('npgo', 'up', 'albsa', 'chla', 'AOI', 'vwnd', 'scal', 'MEI', 'PDO', 'prod', 'curl',
-          'sst', 'NOI', 'NPI', 'uwnd')
+##### supplemental info: singles variables -- run once and then use csv #######
+# season <- c('NB', 'spr', 'sum', 'fall', 'win')
+# vars <- c('npgo', 'up', 'albsa', 'chla', 'AOI', 'vwnd', 'scal', 'MEI', 'PDO', 'prod', 'curl',
+#           'sst', 'NOI', 'NPI', 'uwnd')
 # 
 # waic_vals_east <- data.frame()
 # for (r in c('east')) {

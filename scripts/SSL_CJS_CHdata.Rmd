@@ -27,11 +27,11 @@ inits <- inits_raw %>%
   dplyr::select(AnimalID, Year, Region, SiteName, Sex, Age, 
                 Mass_kg, StandardLength_cm) %>%
   dplyr::rename(t_0 = Year, site_0 = SiteName, reg_0 = Region) %>%
-  filter(t_0 > 1999 & t_0 < 2018) %>% #change to 2019 with new data
+  filter(t_0 > 1999 & t_0 < 2018) %>% 
   dplyr::rename(branding_age = Age) %>%
-  transform(Mass_kg = ifelse(is.na(Mass_kg), NA, Mass_kg)) %>% #fill in any NAs (0)
-  transform(StandardLength_cm = ifelse(is.na(StandardLength_cm), NA, StandardLength_cm)) %>% #fill in any NAs (28)
-  filter(site_0 != 'CHISWELL ISLANDS') #we don't get these resights; SE AK
+  transform(Mass_kg = ifelse(is.na(Mass_kg), NA, Mass_kg)) %>% #fill NAs 
+  transform(StandardLength_cm = ifelse(is.na(StandardLength_cm), NA, StandardLength_cm)) %>% #fill NAs
+  filter(site_0 != 'CHISWELL ISLANDS') #SE AK resights
   
 inits_f <- inits %>% filter(Sex == 'F') 
 inits_m <- inits %>% filter(Sex == 'M') 
@@ -60,7 +60,6 @@ resights <- res_raw %>%
 
 #pup evidence is a value 1-3, an average of expert's votes for whether there was ev of pup
 #table(resights$pup_evidence) 
-
 #Number of unique pup_ev per year per animalID; 
 #most unambiguous (only 1222 of 8445 more than 1 evidence category)
 
@@ -70,7 +69,7 @@ max_pup <- resights %>%
   dplyr::summarize(pup_status_yr = max(pup_evidence), .groups = 'keep') %>%
   transform(pup_cat = ifelse(pup_status_yr == 3, 1, 0)) #assign reprod status (1 or 0) using only 3s (pup for sure)
 
-#then re-merge max_pup onto resights, standardize weight, length, create bmi
+#re-merge max_pup onto resights, standardize weight, length, create bmi
 resights <- resights %>% 
   merge(max_pup, by = c('AnimalID', 'year')) %>%
   transform(pup_evidence = round(pup_evidence, 1)) %>%
@@ -102,7 +101,6 @@ ch_fem <- resights %>%
   transform(ch = as.numeric(factor(obs, levels = c('PU', '1U', '2U', '3U',
                                                    '4U', '4P', '5U', '5P', '6+U', '6+P', 'ND')))) %>%
   dplyr::select(-obs) %>%
-  #a few different region classifications, though ultimately did not model regional effect
   transform(reg_0b = ifelse(reg_0 == 'W ALEU', 'W ALEU', 'Other')) %>%
   transform(reg_0c = ifelse(reg_0 == 'W ALEU' | reg_0 == 'C ALEU', 'West', 'East')) %>%
   dcast(AnimalID + reg_0 + reg_0b + reg_0c + t_0 + Mass_std + Sex ~ year, value.var = 'ch', fill = 11) %>%
@@ -133,33 +131,6 @@ num_resight_act <- resights %>%
   arrange(AnimalID)
 
 # write.csv(num_resight_act, here::here('data', 'resights_actual.csv'), row.names = F)
-
-######## males
-
-#exploring territorial behavior data -- not using since not estimating reproduction for males
-#min age = 6, max age = 16; rel same across regions
-# min_age_ter <- res_raw %>%
-#   # transform(date = mdy(date)) %>%
-#   # transform(year = year(date)) %>% #60K
-#   merge(inits_m, by = c('AnimalID'), all.y = T) %>% 
-#   merge(super_ref %>%
-#           dplyr::select(Complex, SiteName, Region, Rookery) %>%
-#           dplyr::rename(Region_ref = Region), by = 'SiteName', all.x = T) %>%
-#   transform(years_old = year - t_0) %>%
-#   dplyr::select(AnimalID, reg_0, Behavior, year, t_0, years_old) %>%
-#   filter(Behavior %in% c('TM', 'TN', 'TF')) %>%
-#   group_by(reg_0) %>%
-#   summarize(min_ter = min(years_old), max_ter = max(years_old))
-
-##of all the males 6+ years old, how many were observed as territorial?
-# ter_permanence <- res_raw %>% dplyr::select(-Sex) %>%
-#   merge(inits_m, by = c('AnimalID'), all.y = T) %>%
-#   transform(year = year(date)) %>%
-#   transform(years_old = year - t_0) %>%
-#   # dplyr::select(AnimalID, reg_0, Behavior, year, years_old) %>%
-#   transform(territory = ifelse(Behavior %in% c('TM', 'TF', 'TN'), 1, 0)) %>%
-#   # filter(years_old > 5)  %>% 
-#   distinct(AnimalID, year, territory, Behavior) 
 
 #years where animals were territorial - applying max
 max_ter_yr <- res_raw %>% dplyr::select(-Sex) %>%
@@ -258,17 +229,33 @@ ch_m <- resights_m %>%
 
 ```{r brands per year}
 
-#need table of n_ids by year and region
+#table of n_ids by year and region
 brands <- inits %>%
   dplyr::select(AnimalID, t_0, reg_0) %>% distinct() %>%
   reshape2::dcast(reg_0 ~ t_0, value.var = 'AnimalID') %>%
   transform(reg_0 = factor(reg_0, levels = c('E GULF', 'C GULF', 'E ALEU', 'C ALEU', 'W ALEU'))) %>%
   arrange(reg_0)
 
-# write.csv(brands_yr_reg, file = here::here('data', 'ProcData', 'brands.csv'),
-#           row.names = F)
-
-
 ```
 
+```{r weights by region}
+
+weights_f <- resights %>%
+  distinct(AnimalID, Mass_kg, reg_0, Sex)
+
+weights_m <- resights_m %>%
+  distinct(AnimalID, Mass_kg, reg_0, Sex)
+
+weights <- rbind(weights_f, weights_m) %>%
+  transform(reg = ifelse(reg_0 %in% c('C ALEU', 'W ALEU'), 'western', 'eastern'))
+
+ggplot(weights, aes(reg, Mass_kg, col = Sex, group = Sex)) +
+  geom_violin(draw_quantiles = c(0.025, 0.5, 0.975)) +
+  facet_grid(~reg)
+
+weights_sum <- weights %>%
+  group_by(Sex, reg) %>%
+  dplyr::summarize(mean = mean(Mass_kg), sd = sd(Mass_kg))
+
+```
 
