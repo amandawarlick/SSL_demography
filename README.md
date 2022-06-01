@@ -1,12 +1,11 @@
 
-# *Environmental drivers of demography and potential factors limiting the recovery of an endangered marine top predator*
+## *Environmental drivers of demography and potential factors limiting the recovery of an endangered marine top predator*
 
-#### Ecosphere
+#### *Ecosphere*
 
 #### Amanda J. Warlick, Devin S. Johnson, Tom S. Gelatt, Sarah J. Converse
 
-##### Code DOI: [![DOI]([![DOI](https://zenodo.org/badge/400298306.svg)](https://zenodo.org/badge/latestdoi/400298306)
-)
+##### Code DOI:[![DOI](https://zenodo.org/badge/400298306.svg)](https://zenodo.org/badge/latestdoi/400298306)
 
 ##### Please contact the first author for questions about the code or data: Amanda J. Warlick (awarlick@uw.edu)
 _______________________________________________________________________________________
