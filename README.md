@@ -12,8 +12,8 @@ ________________________________________________________________________________
 
 ## Abstract
 
-1. We fit mark-resight data to a Bayesian multi-event model to examine mechanisms linking environmental conditions to population dynamics and inform conservation measures for an endangered top predator: Steller sea lions. 
-2. The first demographic rates estimated for the western portion of the wDPS Steller sea lion range where abundance continues to decline indicate low male pup and female juvenile survival. 
+1. We fit mark-resight data to a Bayesian multi-event model to examine mechanisms linking environmental conditions to population dynamics and inform conservation measures for an endangered top predator: the Steller sea lion. 
+2. The first demographic estimates for Steller sea lions in regions where abundance continues to decline indicate low male pup and female juvenile survival. 
 3. Pup survival was positively correlated with the North Pacific Gyre Oscillation during the study period. 
 4. This work can advance efforts to identify factors driving regionally divergent abundance trends, with implications for population-level responses to future climate variability. 
 
@@ -21,7 +21,7 @@ ________________________________________________________________________________
 
 #### [Published PDF](link)
 
-This repository contains materials for the manuscript entitled *Environmental drivers of demography and potential factors limiting the recovery of an endangered marine top predator*
+This repository contains materials for the manuscript entitled *Environmental drivers of demography and potential factors limiting the recovery of an endangered marine top predator*.
 
 ### [Scripts](./scripts)
 
