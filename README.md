@@ -5,7 +5,8 @@
 
 #### Amanda J. Warlick, Devin S. Johnson, Tom S. Gelatt, Sarah J. Converse
 
-##### Code DOI: [![DOI](link here)
+##### Code DOI: [![DOI]([![DOI](https://zenodo.org/badge/400298306.svg)](https://zenodo.org/badge/latestdoi/400298306)
+)
 
 ##### Please contact the first author for questions about the code or data: Amanda J. Warlick (awarlick@uw.edu)
 _______________________________________________________________________________________
