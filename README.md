@@ -1,5 +1,5 @@
 
-# Steller sea lion demography & environmental variability
+# *Environmental drivers of demography and potential factors limiting the recovery of an endangered marine top predator*
 
 #### Ecosphere
 
